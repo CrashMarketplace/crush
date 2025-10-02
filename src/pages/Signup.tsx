@@ -30,7 +30,7 @@ export default function Signup() {
     return(
         <div className="min-h-[calc(100vh-120px)] flex items-center justify-center px-4 py-16">
             <div className="w-full max-w-4xl rounded-[28px] shadow-2xl shadow-black/20">
-                <div className="rounded-[28px] bg-gradient-to-b from-neutral-900 to-neutral-700 text-white">
+                <div className="rounded-[28px] bg-gradient-to-b from-[#001C6D] to-[#004695] text-white">
                     <div className="grid md:grid-cols-2">
                         {/* 왼쪽 영역 */}
                         <div className="flex relative justify-center items-center p-10 md:p-14">
@@ -43,7 +43,7 @@ export default function Signup() {
                                     중고거래
                                 </p>
                                 <div className="pt-2 text-4xl md:text-[44px] font-extrabold tracking-tight">
-                                    KRUSH
+                                    BILIDA
                                 </div>
                             </div>
                             <div className="hidden absolute right-0 top-8 bottom-8 w-px bg-white/30 md:block" />

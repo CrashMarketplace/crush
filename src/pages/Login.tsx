@@ -16,8 +16,7 @@ export default function Login() {
       >
         {/* 배경 그Radient */}
         <div
-          className="rounded-[28px] bg-gradient-to-b from-neutral-900
-         to-neutral-700 text-white"
+          className="rounded-[28px] bg-gradient-to-b from-[#001C6D] to-[#004695] text-white"
         >
           <div className="grid md:grid-cols-2">
             {/* 왼쪽 카피 영역 */}
@@ -31,7 +30,7 @@ export default function Login() {
                   중고거래
                 </p>
                 <div className="pt-2 text-4xl md:text-[44px] font-extrabold tracking-tight">
-                  KRUSH
+                  BILIDA
                 </div>
               </div>
 

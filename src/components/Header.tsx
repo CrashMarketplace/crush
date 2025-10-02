@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import Group88 from "../assets/Group 88.png";
 
 export default function Header() {
   return (
@@ -7,7 +8,7 @@ export default function Header() {
         {/* 로고 */}
         <div>
           <Link to="/" className="text-xl font-extrabold tracking-tight">
-            KRUSH
+            <img src={Group88} alt="BILIDA" className="h-[78px] w-auto" />
           </Link>
         </div>
 
@@ -38,7 +39,7 @@ export default function Header() {
 
       {/* 하단 네비게이션 */}
       <div className="border-t">
-        <div className="container flex gap-4 items-center py-2 text-sm text-gray-600">
+        <div className="container flex gap-4 items-center py-2 text-sm text-[#001C6D]">
           <Link to="/" className="hover:text-black">
             추천
           </Link>
