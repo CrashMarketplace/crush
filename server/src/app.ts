@@ -10,12 +10,12 @@ import cookieParser from "cookie-parser";
 import os from "os";
 
 // 기존 라우터
-import authRouter from "./routes/auth";
+import authRouter from "./routes/auth.js";
 // 새 라우터 추가
-import productsRouter from "./routes/products";
-import uploadRouter from "./routes/upload";
-import chatsRouter from "./routes/chats";
-import { initSocketServer } from "./realtime/socketManager";
+import productsRouter from "./routes/products.js";
+import uploadRouter from "./routes/upload.js";
+import chatsRouter from "./routes/chats.js";
+import { initSocketServer } from "./realtime/socketManager.js";
 
 const app = express();
 
