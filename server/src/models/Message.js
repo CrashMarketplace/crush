@@ -40,5 +40,7 @@ const MessageSchema = new mongoose_1.Schema({
     sender: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     text: { type: String, required: true, trim: true },
 }, { timestamps: true });
-exports.Message = mongoose_1.default.models.Message || mongoose_1.default.model("Message", MessageSchema);
-exports.default = exports.Message;
+const MessageModel = mongoose_1.default.models.Message ||
+    mongoose_1.default.model("Message", MessageSchema);
+exports.Message = MessageModel;
+exports.default = MessageModel;

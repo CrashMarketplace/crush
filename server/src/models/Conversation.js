@@ -41,6 +41,7 @@ const ConversationSchema = new mongoose_1.Schema({
     lastMessage: { type: mongoose_1.Schema.Types.ObjectId, ref: "Message" },
 }, { timestamps: true });
 ConversationSchema.index({ product: 1, participants: 1 }, { unique: false });
-exports.Conversation = mongoose_1.default.models.Conversation ||
+const ConversationModel = mongoose_1.default.models.Conversation ||
     mongoose_1.default.model("Conversation", ConversationSchema);
-exports.default = exports.Conversation;
+exports.Conversation = ConversationModel;
+exports.default = ConversationModel;

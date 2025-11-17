@@ -1,5 +1,6 @@
 import type http from "http";
 import { Server } from "socket.io";
+import { Types } from "mongoose";
 
 import Conversation from "../models/Conversation";
 import Message from "../models/Message";
@@ -89,7 +90,7 @@ export function initSocketServer(httpServer: http.Server, allowedOrigins: Allowe
             text: text.trim(),
           });
 
-          convo.lastMessage = msg._id;
+          convo.lastMessage = msg._id as Types.ObjectId;
           await convo.save();
 
           await msg.populate({ path: "sender", select: ["userId", "email"] });

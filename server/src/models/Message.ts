@@ -1,4 +1,4 @@
-import mongoose, { Schema, type Document, type Types } from "mongoose";
+import mongoose, { Schema, type Document, type Types, type Model } from "mongoose";
 
 export interface MessageDoc extends Document {
   conversation: Types.ObjectId;
@@ -17,9 +17,12 @@ const MessageSchema = new Schema<MessageDoc>(
   { timestamps: true }
 );
 
-export const Message =
-  mongoose.models.Message || mongoose.model<MessageDoc>("Message", MessageSchema);
+const MessageModel: Model<MessageDoc> =
+  (mongoose.models.Message as Model<MessageDoc> | undefined) ||
+  mongoose.model<MessageDoc>("Message", MessageSchema);
 
-export default Message;
+export const Message = MessageModel;
+
+export default MessageModel;
 
 
