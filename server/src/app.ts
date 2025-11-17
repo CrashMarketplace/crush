@@ -107,7 +107,7 @@ if (!isDevelopment) {
   
   // React Router를 위한 fallback: 모든 GET 요청을 index.html로
   // API 경로는 위에서 이미 처리되므로 여기서는 제외됨
-  app.get("*", (req, res) => {
+  app.get("/*", (req, res) => {
     res.sendFile(path.join(clientBuildPath, "index.html"));
   });
 }
