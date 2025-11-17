@@ -2,7 +2,6 @@ import { API_BASE, getApiBaseUrl } from "../utils/apiConfig";
 
 export type ApiError = { error?: string; message?: string };
 
-const BASE_URL = getApiBaseUrl().replace('/api', ''); // 서버 주소 (API 경로 제거)
 const API = API_BASE;
 
 export async function api<T = any>(
@@ -16,7 +15,13 @@ export async function api<T = any>(
     ...(options.headers || {}),
   };
 
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  // path가 /api로 시작하지 않으면 /api를 추가
+  const apiPath = path.startsWith('/api') ? path : `/api${path}`;
+  const res = await fetch(`${API_BASE.replace(/\/api\/?$/, '')}${apiPath}`, { 
+    ...options, 
+    headers,
+    credentials: "include" 
+  });
   const text = await res.text();
   const data = text ? JSON.parse(text) : {};
   if (!res.ok) {
