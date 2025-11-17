@@ -9,8 +9,14 @@ import { z } from "zod";
 import nodemailer from "nodemailer";
 import bcrypt from "bcryptjs";
 
-import EmailCode from "../models/Emailcode.js";
-import User from "../models/User.js";
+import EmailCode from "../models/EmailCode";
+import User, { type UserDocument } from "../models/User";
+import {
+  signUser,
+  setAuthCookie,
+  clearAuthCookie,
+  readUserFromReq,
+} from "../utils/authToken";
 
 /* ---------------------- utils ---------------------- */
 function requireEnv(name: string) {
@@ -20,10 +26,19 @@ function requireEnv(name: string) {
 }
 const mask = (s?: string) => (s ? s.slice(0, 2) + "***" : "(missing)");
 
+const toPublicUser = (user: UserDocument) => ({
+  id: String(user._id),
+  userId: user.userId,
+  email: user.email,
+  displayName: user.displayName || user.userId,
+  avatarUrl: user.avatarUrl || "",
+  location: user.location || "",
+  bio: user.bio || "",
+});
+
 /* ------------------- nodemailer -------------------- */
 /**
  * Gmail 사용: 앱 비밀번호 필요(구글 계정 → 보안 → 2단계 인증 → 앱 비밀번호)
- * SMTP_HOST/PORT/SECURE는 service 사용 시 자동 설정되므로 생략 가능
  */
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -57,6 +72,38 @@ const signupSchema = z.object({
   userId: z.string().min(3),
   password: z.string().min(4),
   email: z.string().email(),
+});
+const loginSchema = z.object({
+  userId: z.string().min(1),
+  password: z.string().min(1),
+});
+const profileInfoSchema = z
+  .object({
+    displayName: z
+      .string()
+      .trim()
+      .min(2, "닉네임은 2글자 이상 필요해요.")
+      .max(20, "닉네임은 20자를 넘길 수 없어요.")
+      .optional(),
+    location: z
+      .string()
+      .trim()
+      .max(40, "지역명은 40자 이내로 입력해주세요.")
+      .optional(),
+    bio: z
+      .string()
+      .trim()
+      .max(200, "소개는 200자 이내로 입력해주세요.")
+      .optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "수정할 내용을 입력해주세요.",
+  });
+const avatarUpdateSchema = z.object({
+  avatarUrl: z
+    .string()
+    .url("올바른 이미지 주소를 입력해주세요.")
+    .max(600, "URL 길이가 너무 깁니다."),
 });
 
 /* -------------------- router ----------------------- */
@@ -106,10 +153,11 @@ router.post("/verify-code", limiter, async (req, res) => {
     const { email, code } = verifySchema.parse(req.body);
 
     const doc = await EmailCode.findOne({ email });
-    if (!doc)
+    if (!doc) {
       return res
         .status(400)
         .json({ ok: false, error: "코드를 다시 요청하세요." });
+    }
 
     if (doc.expiresAt.getTime() < Date.now()) {
       await doc.deleteOne();
@@ -149,28 +197,151 @@ router.post("/signup", limiter, async (req, res) => {
     const { userId, password, email } = signupSchema.parse(req.body);
 
     const exists = await User.findOne({ $or: [{ userId }, { email }] });
-    if (exists)
+    if (exists) {
       return res
         .status(409)
         .json({ ok: false, error: "이미 사용 중인 아이디/이메일" });
+    }
 
     const hash = await bcrypt.hash(password, 10);
     const user = await User.create({
       userId,
       passwordHash: hash,
       email,
-      emailVerified: true, // 실제 서비스에선 verify 토큰으로 강제하는 것을 권장
+      emailVerified: true, // 실제 서비스는 verify 후 true 권장
+    displayName: userId,
     });
 
     return res.json({
       ok: true,
-      user: { id: String(user._id), userId: user.userId, email: user.email },
+    user: toPublicUser(user),
     });
   } catch (e: any) {
     console.error("signup error:", e);
     const msg = e?.message || "Failed to signup";
     return res.status(400).json({ ok: false, error: msg });
   }
+});
+
+/** 로그인 */
+router.post("/login", limiter, async (req, res) => {
+  try {
+    const { userId, password } = loginSchema.parse(req.body);
+
+    const user = await User.findOne({ userId });
+    if (!user) {
+      return res.status(401).json({
+        ok: false,
+        error: "아이디 또는 비밀번호가 올바르지 않습니다.",
+      });
+    }
+
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) {
+      return res.status(401).json({
+        ok: false,
+        error: "아이디 또는 비밀번호가 올바르지 않습니다.",
+      });
+    }
+
+    const token = signUser({
+      id: String(user._id),
+      userId: user.userId,
+      email: user.email,
+    });
+
+    setAuthCookie(res, token);
+    return res.json({
+      ok: true,
+      user: toPublicUser(user),
+    });
+  } catch (e: any) {
+    console.error("login error:", e);
+    return res
+      .status(500)
+      .json({ ok: false, error: e?.message || "login failed" });
+  }
+});
+
+/** 내 정보(me) */
+router.get("/me", async (req, res) => {
+  const session = readUserFromReq(req);
+  if (!session)
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+
+  const user = await User.findById(session.id);
+  if (!user) {
+    clearAuthCookie(res);
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+  }
+
+  return res.json({ ok: true, user: toPublicUser(user) });
+});
+
+router.patch("/profile/info", async (req, res) => {
+  const session = readUserFromReq(req);
+  if (!session)
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+
+  try {
+    const payload = profileInfoSchema.parse(req.body);
+    const user = await User.findById(session.id);
+    if (!user) {
+      clearAuthCookie(res);
+      return res.status(401).json({ ok: false, error: "unauthorized" });
+    }
+
+    if (payload.displayName !== undefined) {
+      user.displayName = payload.displayName;
+    }
+    if (payload.location !== undefined) {
+      user.location = payload.location;
+    }
+    if (payload.bio !== undefined) {
+      user.bio = payload.bio;
+    }
+
+    await user.save();
+    return res.json({ ok: true, user: toPublicUser(user) });
+  } catch (e: any) {
+    const msg =
+      e?.issues?.[0]?.message ||
+      e?.message ||
+      "프로필 정보를 수정할 수 없습니다.";
+    return res.status(400).json({ ok: false, error: msg });
+  }
+});
+
+router.patch("/profile/avatar", async (req, res) => {
+  const session = readUserFromReq(req);
+  if (!session)
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+
+  try {
+    const { avatarUrl } = avatarUpdateSchema.parse(req.body);
+    const user = await User.findById(session.id);
+    if (!user) {
+      clearAuthCookie(res);
+      return res.status(401).json({ ok: false, error: "unauthorized" });
+    }
+
+    user.avatarUrl = avatarUrl;
+
+    await user.save();
+    return res.json({ ok: true, user: toPublicUser(user) });
+  } catch (e: any) {
+    const msg =
+      e?.issues?.[0]?.message ||
+      e?.message ||
+      "프로필 이미지를 수정할 수 없습니다.";
+    return res.status(400).json({ ok: false, error: msg });
+  }
+});
+
+/** 로그아웃 */
+router.post("/logout", (_req, res) => {
+  clearAuthCookie(res);
+  return res.json({ ok: true });
 });
 
 export default router;
