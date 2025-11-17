@@ -137,7 +137,7 @@ router.post("/:id/messages", async (req, res) => {
       text,
     });
 
-    convo.lastMessage = msg._id;
+    convo.lastMessage = msg._id as Types.ObjectId;
     await convo.save();
 
     await msg.populate({ path: "sender", select: ["userId", "email"] });
