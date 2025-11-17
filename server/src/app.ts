@@ -91,24 +91,19 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // 헬스체크
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
-// 실제 라우터 (API 경로)
+// 1. API 라우트 (가장 먼저)
 app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
-app.use("/api/uploads", uploadRouter);
+app.use("/api/upload", uploadRouter);
 app.use("/api/chats", chatsRouter);
 
-// 프로덕션 환경에서 클라이언트 정적 파일 서빙
-// API 라우터 이후에 설정하여 API 요청이 먼저 처리되도록 함
+// 2. 정적 파일 (프로덕션 환경에서만)
 if (!isDevelopment) {
   const clientBuildPath = path.join(process.cwd(), "..", "client", "dist");
-  
-  // 정적 파일 서빙 (JS, CSS, 이미지 등)
   app.use(express.static(clientBuildPath));
   
-  // React Router를 위한 fallback: 모든 요청을 index.html로
-  // API 경로는 위에서 이미 처리되므로 여기서는 제외됨
-  // Express 5 + path-to-regexp v6 호환: 와일드카드 패턴 대신 미들웨어 사용
-  app.use((req, res, next) => {
+  // 3. SPA catch-all (맨 마지막)
+  app.use((req, res) => {
     res.sendFile(path.join(clientBuildPath, "index.html"));
   });
 }
