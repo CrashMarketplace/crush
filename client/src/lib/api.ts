@@ -1,4 +1,4 @@
-import { API_BASE, getApiBaseUrl } from "../utils/apiConfig";
+import { API_BASE } from "../utils/apiConfig";
 
 export type ApiError = { error?: string; message?: string };
 
