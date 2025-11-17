@@ -105,9 +105,10 @@ if (!isDevelopment) {
   // 정적 파일 서빙 (JS, CSS, 이미지 등)
   app.use(express.static(clientBuildPath));
   
-  // React Router를 위한 fallback: 모든 GET 요청을 index.html로
+  // React Router를 위한 fallback: 모든 요청을 index.html로
   // API 경로는 위에서 이미 처리되므로 여기서는 제외됨
-  app.get("/*", (req, res) => {
+  // Express 5 + path-to-regexp v6 호환: 와일드카드 패턴 대신 미들웨어 사용
+  app.use((req, res, next) => {
     res.sendFile(path.join(clientBuildPath, "index.html"));
   });
 }
