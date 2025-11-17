@@ -35,6 +35,7 @@ const getAllowedOrigins = (): string[] | true => {
   
   // 기본 도메인 추가
   const defaultDomains = [
+    "https://darling-torrone-5e5797.netlify.app",
     "https://bilidamarket.com",
     "http://bilidamarket.com",
     "https://www.bilidamarket.com",
@@ -104,7 +105,20 @@ if (!isDevelopment) {
   
   // 3. SPA catch-all (맨 마지막)
   app.use((req, res) => {
+    // API 요청에 대해서는 JSON으로 404 반환
+    if (req.path.startsWith("/api")) {
+      return res.status(404).json({ error: "Not Found" });
+    }
+    // 그 외의 요청은 SPA HTML 반환
     res.sendFile(path.join(clientBuildPath, "index.html"));
+  });
+} else {
+  // 개발 환경에서도 API 404는 JSON으로 반환
+  app.use((req, res) => {
+    if (req.path.startsWith("/api")) {
+      return res.status(404).json({ error: "Not Found" });
+    }
+    res.status(404).json({ error: "Not Found" });
   });
 }
 
