@@ -17,5 +17,10 @@ const ProductSchema = new mongoose_1.Schema({
     },
     // 중고 상품 대여 가능 여부
     usedAvailable: { type: Boolean, default: false, index: true },
+    likes: {
+        type: [mongoose_1.Types.ObjectId],
+        ref: "User",
+        default: [],
+    },
 }, { timestamps: true });
 exports.default = (0, mongoose_1.model)("Product", ProductSchema);
