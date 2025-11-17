@@ -1,0 +1,57 @@
+@import "./styles/form.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-size: clamp(15px, 1.5vw, 16px);
+  color: #0f172a;
+  background-color: #f8fafc;
+  font-family: "Pretendard Variable", "Inter", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #111827;
+}
+
+img,
+picture,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+}
+
+@layer components {
+  .card {
+    @apply overflow-hidden bg-white border border-gray-200 rounded-2xl;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition rounded-lg border border-gray-300 bg-white hover:bg-gray-50;
+  }
+  .btn-primary {
+    @apply border-gray-900 bg-gray-900 text-white hover:opacity-90;
+  }
+  .section-title {
+    @apply text-lg font-semibold;
+  }
+  .container {
+    @apply w-full max-w-6xl px-4 mx-auto;
+  }
+}
