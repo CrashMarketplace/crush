@@ -9,5 +9,4 @@ NODE_VERSION = "20"
 [[plugins]]
 package = "@netlify/plugin-lighthouse"
   [plugins.inputs]
-  fail_build = false
-
+  fail_deploy_on_score_thresholds = false
