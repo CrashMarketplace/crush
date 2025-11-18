@@ -20,7 +20,7 @@ export default function Feed({ mode }: Props) {
       setLoading(true);
       setErr(null);
       try {
-        const res = await fetch(`${API_BASE}/products`, { credentials: "include" });
+        const res = await fetch(`${API_BASE}/api/products`, { credentials: "include" });
         const data = await res.json();
         if (!res.ok || data.ok === false) throw new Error(data.error || "불러오기 실패");
         if (!alive) return;

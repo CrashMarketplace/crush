@@ -19,7 +19,12 @@ export async function api<T = any>(
   const apiPath = path.startsWith('/api') ? path : `/api${path}`;
   // API_BASE는 Railway URL (예: https://crush-production.up.railway.app)
   // /api는 경로에 포함되므로 그대로 사용
-  const fullUrl = API_BASE ? `${API_BASE}${apiPath}` : apiPath;
+  // API_BASE가 빈 문자열이면 상대 경로로 fallback (하지만 이는 문제가 될 수 있음)
+  // 프로덕션에서는 반드시 API_BASE가 설정되어야 함
+  if (!API_BASE || API_BASE.trim() === '') {
+    console.error('❌ API_BASE가 설정되지 않았습니다! 환경 변수 VITE_API_URL을 확인하세요.');
+  }
+  const fullUrl = API_BASE && API_BASE.trim() !== '' ? `${API_BASE}${apiPath}` : apiPath;
   const res = await fetch(fullUrl, { 
     ...options, 
     headers,
@@ -38,7 +43,10 @@ export async function api<T = any>(
 async function post<T>(path: string, body: any): Promise<T> {
   // path가 /api로 시작하지 않으면 /api를 추가
   const apiPath = path.startsWith('/api') ? path : `/api${path}`;
-  const fullUrl = API ? `${API}${apiPath}` : apiPath;
+  if (!API || API.trim() === '') {
+    console.error('❌ API_BASE가 설정되지 않았습니다! 환경 변수 VITE_API_URL을 확인하세요.');
+  }
+  const fullUrl = API && API.trim() !== '' ? `${API}${apiPath}` : apiPath;
   const res = await fetch(fullUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -54,7 +62,10 @@ async function post<T>(path: string, body: any): Promise<T> {
 async function get<T>(path: string): Promise<T> {
   // path가 /api로 시작하지 않으면 /api를 추가
   const apiPath = path.startsWith('/api') ? path : `/api${path}`;
-  const fullUrl = API ? `${API}${apiPath}` : apiPath;
+  if (!API || API.trim() === '') {
+    console.error('❌ API_BASE가 설정되지 않았습니다! 환경 변수 VITE_API_URL을 확인하세요.');
+  }
+  const fullUrl = API && API.trim() !== '' ? `${API}${apiPath}` : apiPath;
   const res = await fetch(fullUrl, { credentials: "include" });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data?.ok === false)

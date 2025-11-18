@@ -16,7 +16,7 @@ export default function Home() {
       setLoading(true);
       setErr(null);
       try {
-        const res = await fetch(`${API_BASE}/products`, {
+        const res = await fetch(`${API_BASE}/api/products`, {
           credentials: "include",
         });
         const data = await res.json();

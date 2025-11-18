@@ -230,7 +230,7 @@ function MyProductCard({
 
   const requestDelete = async () => {
     try {
-      const res = await fetch(`${API_BASE}/products/${item._id}`, {
+      const res = await fetch(`${API_BASE}/api/products/${item._id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -250,7 +250,7 @@ function MyProductCard({
     if (statusBusy) return;
     setStatusBusy(true);
     try {
-      const res = await fetch(`${API_BASE}/products/${item._id}/status`, {
+      const res = await fetch(`${API_BASE}/api/products/${item._id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -398,7 +398,7 @@ function ProfilePhotoEditor({
     try {
       const formData = new FormData();
       formData.append("files", file);
-      const uploadRes = await fetch(`${API_BASE}/uploads/images`, {
+      const uploadRes = await fetch(`${API_BASE}/api/uploads/images`, {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -412,7 +412,7 @@ function ProfilePhotoEditor({
       const url = uploadJson.urls?.[0];
       if (!url) throw new Error("업로드된 이미지 주소를 찾을 수 없어요.");
 
-      const res = await fetch(`${API_BASE}/auth/profile/avatar`, {
+      const res = await fetch(`${API_BASE}/api/auth/profile/avatar`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -549,7 +549,7 @@ function ProfileInfoEditor({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/auth/profile/info`, {
+      const res = await fetch(`${API_BASE}/api/auth/profile/info`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

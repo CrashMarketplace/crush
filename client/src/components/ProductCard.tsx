@@ -40,7 +40,7 @@ export default function ProductCard({ item, onDeleted }: Props) {
     if (!confirm("이 상품을 삭제하시겠습니까?")) return;
     setDeleting(true);
     try {
-      const res = await fetch(`${API_BASE}/products/${item._id}`, {
+      const res = await fetch(`${API_BASE}/api/products/${item._id}`, {
         method: "DELETE",
         credentials: "include",
       });
