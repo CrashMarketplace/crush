@@ -11,7 +11,10 @@ export function getApiBaseUrl(): string {
   if (import.meta.env.VITE_API_URL) {
     const url = import.meta.env.VITE_API_URL.trim();
     // URL 끝의 슬래시 제거 (일관성을 위해)
-    return url.endsWith('/') ? url.slice(0, -1) : url;
+    const finalUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+    // 환경 변수가 제대로 설정되었는지 확인용 로그 (프로덕션에서도 확인 가능)
+    console.log('✅ VITE_API_URL 환경 변수가 설정되었습니다:', finalUrl);
+    return finalUrl;
   }
   
   // 하위 호환성: VITE_API_BASE도 지원
