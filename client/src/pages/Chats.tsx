@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { API_BASE } from "../utils/apiConfig";
+import { buildApiUrl } from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 
@@ -53,7 +53,7 @@ export default function Chats() {
     (async () => {
       setLoadingList(true);
       try {
-        const res = await fetch(`${API_BASE}/api/chats`, { credentials: "include" });
+        const res = await fetch(buildApiUrl("/chats"), { credentials: "include" });
         const data = await res.json();
         if (!res.ok || data?.ok === false) throw new Error(data?.error || "failed");
         if (!alive) return;
@@ -84,7 +84,7 @@ export default function Chats() {
     }
     setLoadingMsgs(true);
     try {
-      const res = await fetch(`${API_BASE}/api/chats/${id}/messages`, {
+      const res = await fetch(buildApiUrl(`/chats/${id}/messages`), {
         credentials: "include",
       });
       const data = await res.json();
@@ -200,7 +200,7 @@ export default function Chats() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/chats/${id}/messages`, {
+      const res = await fetch(buildApiUrl(`/chats/${id}/messages`), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

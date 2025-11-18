@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 import express from "express";
 import cors from "cors";
+import type { CorsOptions } from "cors";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import os from "os";
@@ -51,8 +52,8 @@ const allowedOrigins = getAllowedOrigins();
 
 // CORS 미들웨어 설정 - cors 패키지 사용
 // ⚠️ 중요: 모든 요청(정적 파일 포함)에 CORS 헤더를 적용하기 위해 가장 먼저 설정
-const corsOptions = {
-  origin: (origin, callback) => {
+const corsOptions: CorsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     // 개발 환경: 모든 origin 허용
     if (allowedOrigins === true) {
       callback(null, true);
@@ -90,10 +91,8 @@ const corsOptions = {
 };
 
 // CORS 미들웨어 적용 (모든 요청에 대해)
+// cors 미들웨어가 자동으로 OPTIONS 요청을 처리하므로 별도로 app.options()를 호출할 필요 없음
 app.use(cors(corsOptions));
-
-// OPTIONS 요청을 명시적으로 처리 (추가 보안)
-app.options("*", cors(corsOptions));
 
 // 바디/쿠키
 app.use(express.json({ limit: "2mb" }));

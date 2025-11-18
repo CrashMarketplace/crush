@@ -107,7 +107,35 @@ function getSocketBaseUrl(): string {
   }
 }
 
+// API 경로를 정규화하는 헬퍼 함수
+export function normalizeApiPath(path: string): string {
+  if (path.startsWith('/api')) {
+    return path;
+  }
+  if (path.startsWith('/')) {
+    return `/api${path}`;
+  }
+  return `/api/${path}`;
+}
+
 // 기본 export로 바로 사용 가능한 값 제공
 export const API_BASE = getApiBaseUrl();
 export const SOCKET_BASE = getSocketBaseUrl();
+
+// API_BASE와 경로를 결합하는 헬퍼 함수 (중복 /api 방지)
+// ⚠️ API_BASE 이후에 정의해야 함
+export function buildApiUrl(path: string): string {
+  const apiPath = normalizeApiPath(path);
+  
+  const base = API_BASE;
+  if (!base || base.trim() === '') {
+    return apiPath;
+  }
+  
+  const trimmedBase = base.trim();
+  // API_BASE가 이미 /api로 끝나면 제거 (중복 방지)
+  const cleanBase = trimmedBase.replace(/\/api\/?$/, '');
+  
+  return `${cleanBase}${apiPath}`;
+}
 

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
-import { API_BASE } from "../utils/apiConfig";
+import { buildApiUrl } from "../utils/apiConfig";
 
 type User =
   | {
@@ -16,9 +16,8 @@ type User =
   | null;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  // path가 /api로 시작하지 않으면 /api를 추가
-  const apiPath = path.startsWith('/api') ? path : `/api${path}`;
-  const res = await fetch(`${API_BASE}${apiPath}`, {
+  const fullUrl = buildApiUrl(path);
+  const res = await fetch(fullUrl, {
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     ...init,

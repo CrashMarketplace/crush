@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Banner from "../components/Banner";
 import ProductSection from "../components/ProductSection";
 import type { Product } from "../data/mockProducts";
-import { API_BASE } from "../utils/apiConfig";
+import { buildApiUrl } from "../utils/apiConfig";
 
 export default function Home() {
   const [items, setItems] = useState<Product[]>([]);
@@ -16,7 +16,7 @@ export default function Home() {
       setLoading(true);
       setErr(null);
       try {
-        const res = await fetch(`${API_BASE}/api/products`, {
+        const res = await fetch(buildApiUrl("/products"), {
           credentials: "include",
         });
         const data = await res.json();
