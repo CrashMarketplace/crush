@@ -9,7 +9,6 @@ import cors from "cors";
 import type { CorsOptions } from "cors";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
-import os from "os";
 
 import authRouter from "./routes/auth";
 import productsRouter from "./routes/products";
@@ -25,15 +24,14 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 // Railway 환경인지 감지
 const isRailway = Boolean(
   process.env.RAILWAY_ENVIRONMENT ||
-    process.env.RAILWAY_PROJECT_ID ||
-    process.env.RAILWAY_SERVICE_NAME ||
-    process.env.RAILWAY_DEPLOYMENT_ID
+  process.env.RAILWAY_PROJECT_ID ||
+  process.env.RAILWAY_SERVICE_NAME ||
+  process.env.RAILWAY_DEPLOYMENT_ID
 );
 
-// Railway면 프로덕션 모드 취급
 const isProduction = !isDevelopment || isRailway;
 
-// 기본 허용 도메인
+// CORS 기본 도메인
 const defaultDomains = [
   "https://darling-torrone-5e5797.netlify.app",
   "https://bilidamarket.com",
@@ -48,25 +46,14 @@ const envDomains = process.env.ALLOWED_ORIGINS
 
 const allowedOriginsList = [...new Set([...defaultDomains, ...envDomains])];
 
-// CORS 옵션
+// CORS
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    if (!isProduction) {
-      callback(null, true);
-      return;
-    }
+    if (!isProduction) return callback(null, true);
+    if (!origin) return callback(null, true);
 
-    if (!origin) {
-      callback(null, true);
-      return;
-    }
-
-    if (allowedOriginsList.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`🚫 CORS BLOCKED: ${origin}`);
-      callback(new Error("Not allowed by CORS"));
-    }
+    if (allowedOriginsList.includes(origin)) callback(null, true);
+    else callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
 };
@@ -79,9 +66,7 @@ app.use(cookieParser());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // 헬스체크
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true });
-});
+app.get("/api/health", (req, res) => res.json({ ok: true }));
 
 // API 라우트
 app.use("/api/auth", authRouter);
@@ -90,49 +75,33 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/chats", chatsRouter);
 
 
-// -------------------------------------------
-// 🚀 **프론트엔드 서빙 (Express 5 + Railway 경로 문제 해결본)**
-// -------------------------------------------
+// ---------------------------
+// 🔥 프론트엔드 서빙 (정답)
+// ---------------------------
 
 if (isProduction) {
-  // dist/app.js 기준으로 client-dist 찾기
-  // server/dist/app.js → server/client-dist
-  const clientPath = path.join(__dirname, "../client-dist");
-
+  // dist/app.js 기준으로 client/dist 위치 찾기
+  const clientPath = path.join(__dirname, "../../client/dist");
   console.log("📦 Serving frontend from:", clientPath);
 
-  // 정적 파일 서빙
   app.use(express.static(clientPath));
 
-  // SPA fallback — Express 5에서는 "*" 사용 불가 → 정규식 사용
   app.get(/.*/, (req, res) => {
     if (req.path.startsWith("/api")) {
       return res.status(404).json({ error: "API Not Found" });
     }
     res.sendFile(path.join(clientPath, "index.html"));
   });
-} else {
-  // 개발 환경 안내 메시지
-  app.get(/.*/, (req, res) => {
-    if (req.path.startsWith("/api")) {
-      return res.status(404).json({ error: "API Not Found" });
-    }
-    res.json({
-      message: "Client not served by backend in development mode.",
-      tip: "Run `npm run dev` inside client directory.",
-    });
-  });
 }
 
 
-// -------------------------------------------
-// 🚀 서버 실행
-// -------------------------------------------
+// ---------------------------
+// 서버 실행
+// ---------------------------
 
 const server = http.createServer(app);
-
-// Socket.io 허용 origin
 const socketAllowedOrigins = !isProduction ? true : allowedOriginsList;
+
 initSocketServer(server, socketAllowedOrigins);
 
 (async () => {
@@ -141,14 +110,13 @@ initSocketServer(server, socketAllowedOrigins);
     console.log("✅ MongoDB connected");
 
     const port = Number(process.env.PORT) || 4000;
-    const host = process.env.HOST ?? "0.0.0.0";
 
-    server.listen(port, host, () => {
-      console.log("\n=================================");
+    server.listen(port, "0.0.0.0", () => {
+      console.log("=================================");
       console.log("🚀 Server started successfully!");
       console.log("Mode:", isProduction ? "Production" : "Development");
       console.log("PORT:", port);
-      console.log("=================================\n");
+      console.log("=================================");
     });
   } catch (err) {
     console.error("❌ Server startup failed:", err);
