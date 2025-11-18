@@ -96,7 +96,7 @@ export default function ProductNew() {
     if (!files.length) return [];
     const fd = new FormData();
     files.forEach((f) => fd.append("files", f));
-    const res = await fetch(`${API_BASE}/uploads/images`, {
+    const res = await fetch(`${API_BASE}/api/uploads/images`, {
       method: "POST",
       credentials: "include",
       body: fd,
@@ -120,7 +120,7 @@ export default function ProductNew() {
     setBusy(true);
     try {
       const urls = await uploadImages(selFiles.map((s) => s.file));
-      const res = await fetch(`${API_BASE}/products`, {
+      const res = await fetch(`${API_BASE}/api/products`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

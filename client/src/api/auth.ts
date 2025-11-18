@@ -3,7 +3,9 @@ import { API_BASE } from "../utils/apiConfig";
 const BASE = API_BASE;
 
 async function req<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${url}`, {
+  // url이 /api로 시작하지 않으면 /api를 추가
+  const apiPath = url.startsWith('/api') ? url : `/api${url}`;
+  const res = await fetch(`${BASE}${apiPath}`, {
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     ...options,

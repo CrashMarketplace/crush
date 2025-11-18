@@ -50,7 +50,7 @@ export default function ListingDetail() {
       setErr(null);
       try {
         // 단건 조회
-        const pRes = await fetch(`${API_BASE}/products/${id}`, {
+        const pRes = await fetch(`${API_BASE}/api/products/${id}`, {
           credentials: "include",
         });
         const pJson = await pRes.json();
@@ -59,7 +59,7 @@ export default function ListingDetail() {
         const item: Product = pJson.product;
 
         // 비슷한 상품 (간단히: 전체 목록에서 현재 id 제외 후 상위 6개)
-        const lRes = await fetch(`${API_BASE}/products`, {
+        const lRes = await fetch(`${API_BASE}/api/products`, {
           credentials: "include",
         });
         const lJson = await lRes.json();
@@ -116,7 +116,7 @@ export default function ListingDetail() {
     }
     if (!id) return;
     try {
-      const res = await fetch(`${API_BASE}/chats/start`, {
+      const res = await fetch(`${API_BASE}/api/chats/start`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -134,7 +134,7 @@ export default function ListingDetail() {
     const next = product.status === "sold" ? "selling" : "sold";
     setStatusBusy(true);
     try {
-      const res = await fetch(`${API_BASE}/products/${product._id}/status`, {
+      const res = await fetch(`${API_BASE}/api/products/${product._id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -161,7 +161,7 @@ export default function ListingDetail() {
     }
     setLikeBusy(true);
     try {
-      const res = await fetch(`${API_BASE}/products/${product._id}/likes`, {
+      const res = await fetch(`${API_BASE}/api/products/${product._id}/likes`, {
         method: liked ? "DELETE" : "POST",
         credentials: "include",
       });
@@ -229,7 +229,7 @@ export default function ListingDetail() {
     setReviewBusy(true);
     setReviewFeedback(null);
     try {
-      const res = await fetch(`${API_BASE}/products/${product._id}/reviews`, {
+      const res = await fetch(`${API_BASE}/api/products/${product._id}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -281,7 +281,7 @@ export default function ListingDetail() {
     }
     let alive = true;
     setReviewsLoading(true);
-    fetch(`${API_BASE}/products/${id}/reviews`, {
+    fetch(`${API_BASE}/api/products/${id}/reviews`, {
       credentials: "include",
     })
       .then((res) => res.json())
@@ -321,7 +321,7 @@ export default function ListingDetail() {
     if (!confirm("정말로 이 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
     setDeleting(true);
     try {
-      const res = await fetch(`${API_BASE}/products/${id}`, {
+      const res = await fetch(`${API_BASE}/api/products/${id}`, {
         method: "DELETE",
         credentials: "include",
       });

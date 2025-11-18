@@ -24,7 +24,9 @@ const BaseInput = React.memo(function BaseInput(props: BaseInputProps) {
 /* ------------------------------ API 유틸 ------------------------------ */
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  // path가 /api로 시작하지 않으면 /api를 추가
+  const apiPath = path.startsWith('/api') ? path : `/api${path}`;
+  const res = await fetch(`${API_BASE}${apiPath}`, {
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     ...init,
