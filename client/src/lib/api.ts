@@ -1,8 +1,6 @@
-import { API_BASE, buildApiUrl } from "../utils/apiConfig";
+import { buildApiUrl } from "../utils/apiConfig";
 
 export type ApiError = { error?: string; message?: string };
-
-const API = API_BASE;
 
 export async function api<T = any>(
   path: string,
