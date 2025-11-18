@@ -13,6 +13,8 @@
   "description": "Market App Backend Server",
   "dependencies": {
     "@types/morgan": "^1.9.10",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
