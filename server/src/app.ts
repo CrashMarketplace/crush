@@ -49,37 +49,33 @@ const getAllowedOrigins = (): string[] | true => {
 
 const allowedOrigins = getAllowedOrigins();
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin as string | undefined;
-  
-  if (allowedOrigins === true) {
-    // 개발 환경: 모든 origin 허용
-    res.header("Access-Control-Allow-Origin", origin || "*");
-    res.header("Access-Control-Allow-Credentials", "true");
-  } else {
-    // 프로덕션: 허용된 origin만
-    if (origin && allowedOrigins.includes(origin)) {
-      res.header("Access-Control-Allow-Origin", origin);
-      res.header("Vary", "Origin");
-      res.header("Access-Control-Allow-Credentials", "true");
-    }
-  }
-  
-  // 업로드(FormData)에도 문제 없도록 헤더 확장
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-  );
-  
-  if (req.method === "OPTIONS") return res.sendStatus(204); // 404 방지
-  next();
-});
-
-// cors 미들웨어(중복 허용: 위 핸들러와 합쳐 안전망 역할)
+// CORS 미들웨어 설정 - cors 패키지 사용
 app.use(cors({ 
-  origin: allowedOrigins, 
-  credentials: true 
+  origin: (origin, callback) => {
+    // 개발 환경: 모든 origin 허용
+    if (allowedOrigins === true) {
+      callback(null, true);
+      return;
+    }
+    
+    // origin이 없는 경우 (같은 도메인 요청 등) 허용
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    
+    // 프로덕션: 허용된 origin만
+    if (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: [],
+  maxAge: 86400 // 24시간
 }));
 
 // 바디/쿠키
