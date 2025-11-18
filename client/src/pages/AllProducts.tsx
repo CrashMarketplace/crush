@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import type { Product } from "../data/mockProducts";
-import { API_BASE } from "../utils/apiConfig";
+import { buildApiUrl } from "../utils/apiConfig";
 
 export default function AllProducts() {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export default function AllProducts() {
       setLoading(true);
       setErr(null);
       try {
-        const res = await fetch(`${API_BASE}/api/products`, { credentials: "include" });
+        const res = await fetch(buildApiUrl("/products"), { credentials: "include" });
         const data = await res.json();
         if (!res.ok || data.ok === false) throw new Error(data.error || "불러오기 실패");
         if (!alive) return;
