@@ -91,17 +91,19 @@ app.use("/api/chats", chatsRouter);
 
 
 // -------------------------------------------
-// 🚀 **프론트엔드 서빙 (Express 5 호환 완성본)**
+// 🚀 **프론트엔드 서빙 (Express 5 + Railway 경로 완전 해결본)**
 // -------------------------------------------
 
 if (isProduction) {
-  const clientPath = path.join(process.cwd(), "..", "client", "dist");
+  // ⬅️ 핵심: process.cwd() 절대 사용 X
+  // dist/app.js 기준으로 client/dist 찾기
+  const clientPath = path.join(__dirname, "../../client/dist");
   console.log("📦 Serving frontend from:", clientPath);
 
   // 정적 파일 서빙
   app.use(express.static(clientPath));
 
-  // SPA fallback — Express 5에서는 "*" 사용 불가 → 정규식 사용
+  // SPA fallback — Express 5에서 "*" 사용 불가 → 정규식 사용
   app.get(/.*/, (req, res) => {
     if (req.path.startsWith("/api")) {
       return res.status(404).json({ error: "API Not Found" });
