@@ -1,8 +1,9 @@
 // server/src/app.ts
+import dotenv from "dotenv";
+dotenv.config(); // ⬅️ 전역에서 단 한 번만 로드. 가장 위에 있어야 함!
+
 import path from "path";
 import http from "http";
-import dotenv from "dotenv";
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 import express from "express";
 import cors from "cors";
@@ -24,9 +25,9 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 // Railway 환경인지 감지
 const isRailway = Boolean(
   process.env.RAILWAY_ENVIRONMENT ||
-  process.env.RAILWAY_PROJECT_ID ||
-  process.env.RAILWAY_SERVICE_NAME ||
-  process.env.RAILWAY_DEPLOYMENT_ID
+    process.env.RAILWAY_PROJECT_ID ||
+    process.env.RAILWAY_SERVICE_NAME ||
+    process.env.RAILWAY_DEPLOYMENT_ID
 );
 
 const isProduction = !isDevelopment || isRailway;
@@ -46,7 +47,7 @@ const envDomains = process.env.ALLOWED_ORIGINS
 
 const allowedOriginsList = [...new Set([...defaultDomains, ...envDomains])];
 
-// CORS
+// CORS 설정
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     if (!isProduction) return callback(null, true);
@@ -62,11 +63,11 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "2mb" }));
 app.use(cookieParser());
 
-// 정적 업로드 파일
+// 업로드 파일 정적 서빙
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-// 헬스체크
-app.get("/api/health", (req, res) => res.json({ ok: true }));
+// 헬스 체크
+app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 // API 라우트
 app.use("/api/auth", authRouter);
@@ -74,13 +75,10 @@ app.use("/api/products", productsRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chats", chatsRouter);
 
-
 // ---------------------------
-// 🔥 프론트엔드 서빙 (정답)
+// 프론트엔드 서빙 (프로덕션)
 // ---------------------------
-
 if (isProduction) {
-  // dist/app.js 기준으로 client/dist 위치 찾기
   const clientPath = path.join(__dirname, "../../client/dist");
   console.log("📦 Serving frontend from:", clientPath);
 
@@ -94,11 +92,9 @@ if (isProduction) {
   });
 }
 
-
 // ---------------------------
 // 서버 실행
 // ---------------------------
-
 const server = http.createServer(app);
 const socketAllowedOrigins = !isProduction ? true : allowedOriginsList;
 
