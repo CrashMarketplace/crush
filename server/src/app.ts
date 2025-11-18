@@ -50,7 +50,8 @@ const getAllowedOrigins = (): string[] | true => {
 const allowedOrigins = getAllowedOrigins();
 
 // CORS 미들웨어 설정 - cors 패키지 사용
-app.use(cors({ 
+// ⚠️ 중요: 모든 요청(정적 파일 포함)에 CORS 헤더를 적용하기 위해 가장 먼저 설정
+const corsOptions = {
   origin: (origin, callback) => {
     // 개발 환경: 모든 origin 허용
     if (allowedOrigins === true) {
@@ -58,7 +59,7 @@ app.use(cors({
       return;
     }
     
-    // origin이 없는 경우 (같은 도메인 요청 등) 허용
+    // origin이 없는 경우 (같은 도메인 요청, Postman 등) 허용
     if (!origin) {
       callback(null, true);
       return;
@@ -68,15 +69,31 @@ app.use(cors({
     if (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn(`⚠️ CORS 차단된 origin: ${origin}`);
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true,
+  credentials: true, // 쿠키 포함 요청 허용
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  exposedHeaders: [],
-  maxAge: 86400 // 24시간
-}));
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+    "Cookie", // 쿠키 헤더 명시적 허용
+  ],
+  exposedHeaders: ["Set-Cookie"], // 클라이언트에서 읽을 수 있는 헤더
+  maxAge: 86400, // 24시간 (preflight 캐시)
+  preflightContinue: false, // preflight 요청을 다음 미들웨어로 전달하지 않음
+  optionsSuccessStatus: 204, // OPTIONS 요청 성공 상태 코드
+};
+
+// CORS 미들웨어 적용 (모든 요청에 대해)
+app.use(cors(corsOptions));
+
+// OPTIONS 요청을 명시적으로 처리 (추가 보안)
+app.options("*", cors(corsOptions));
 
 // 바디/쿠키
 app.use(express.json({ limit: "2mb" }));
@@ -109,12 +126,21 @@ if (!isDevelopment) {
     res.sendFile(path.join(clientBuildPath, "index.html"));
   });
 } else {
-  // 개발 환경에서도 API 404는 JSON으로 반환
+  // 개발 환경: API 404는 JSON으로 반환, 그 외는 안내 메시지
   app.use((req, res) => {
     if (req.path.startsWith("/api")) {
-      return res.status(404).json({ error: "Not Found" });
+      return res.status(404).json({ 
+        error: "Not Found",
+        message: `API endpoint '${req.path}' not found`,
+        method: req.method
+      });
     }
-    res.status(404).json({ error: "Not Found" });
+    // 개발 환경에서는 클라이언트가 별도로 실행되므로 안내 메시지
+    res.status(404).json({ 
+      error: "Not Found",
+      message: "This is the API server. The client should be running separately.",
+      tip: "In development, run the client with 'npm run dev' in the client directory"
+    });
   });
 }
 
