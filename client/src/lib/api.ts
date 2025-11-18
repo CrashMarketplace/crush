@@ -17,7 +17,10 @@ export async function api<T = any>(
 
   // path가 /api로 시작하지 않으면 /api를 추가
   const apiPath = path.startsWith('/api') ? path : `/api${path}`;
-  const res = await fetch(`${API_BASE.replace(/\/api\/?$/, '')}${apiPath}`, { 
+  // API_BASE는 Railway URL (예: https://crush-production.up.railway.app)
+  // /api는 경로에 포함되므로 그대로 사용
+  const fullUrl = API_BASE ? `${API_BASE}${apiPath}` : apiPath;
+  const res = await fetch(fullUrl, { 
     ...options, 
     headers,
     credentials: "include" 
@@ -33,7 +36,10 @@ export async function api<T = any>(
 }
 
 async function post<T>(path: string, body: any): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
+  // path가 /api로 시작하지 않으면 /api를 추가
+  const apiPath = path.startsWith('/api') ? path : `/api${path}`;
+  const fullUrl = API ? `${API}${apiPath}` : apiPath;
+  const res = await fetch(fullUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -46,7 +52,10 @@ async function post<T>(path: string, body: any): Promise<T> {
 }
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API}${path}`, { credentials: "include" });
+  // path가 /api로 시작하지 않으면 /api를 추가
+  const apiPath = path.startsWith('/api') ? path : `/api${path}`;
+  const fullUrl = API ? `${API}${apiPath}` : apiPath;
+  const res = await fetch(fullUrl, { credentials: "include" });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data?.ok === false)
     throw new Error(data?.error || `HTTP ${res.status}`);
