@@ -7,8 +7,10 @@ publish = "dist"
 NODE_VERSION = "20"
 # ⚠️ 중요: Netlify 대시보드에서 다음 환경 변수를 설정해야 합니다:
 # Site settings > Environment variables에서 추가:
-# VITE_API_URL = https://crush-production.up.railway.app
-# 예시: VITE_API_URL = https://your-railway-backend.up.railway.app
+# Key: VITE_API_URL
+# Value: https://crush-production.up.railway.app
+# ⚠️ 절대 /api를 붙이지 마세요! (예: ❌ https://xxx.up.railway.app/api)
+# 환경 변수 설정 후 반드시 "Clear cache & redeploy" 실행!
 
 [[plugins]]
 package = "@netlify/plugin-lighthouse"
