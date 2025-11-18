@@ -34,16 +34,16 @@ const isRailway = !!(
 );
 // 프로덕션 모드: NODE_ENV=production이거나 Railway 환경이거나 localhost가 아닌 경우
 const isProduction = isDevelopment === false || isRailway;
-
+  
 // 기본 허용 도메인 (항상 포함)
-const defaultDomains = [
-  "https://darling-torrone-5e5797.netlify.app",
-  "https://bilidamarket.com",
-  "http://bilidamarket.com",
-  "https://www.bilidamarket.com",
-  "http://www.bilidamarket.com",
-];
-
+  const defaultDomains = [
+    "https://darling-torrone-5e5797.netlify.app",
+    "https://bilidamarket.com",
+    "http://bilidamarket.com",
+    "https://www.bilidamarket.com",
+    "http://www.bilidamarket.com",
+  ];
+  
 // 환경 변수에서 추가 도메인 가져오기
 const envDomains = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((d) => d.trim()).filter(Boolean)
@@ -211,13 +211,13 @@ initSocketServer(server, socketAllowedOrigins);
       } else {
         // 프로덕션 환경
         console.log(`📍 서버 포트: ${port}`);
-        console.log("\n🌐 허용된 도메인:");
+          console.log("\n🌐 허용된 도메인:");
         allowedOriginsList.forEach((origin) => {
-          console.log(`   ${origin}`);
-        });
+            console.log(`   ${origin}`);
+          });
         console.log("\n💡 프로덕션 모드로 실행 중입니다.");
         if (!isDevelopment) {
-          console.log("   클라이언트 정적 파일이 서버에서 서빙됩니다.");
+        console.log("   클라이언트 정적 파일이 서버에서 서빙됩니다.");
         }
       }
       
