@@ -24,53 +24,55 @@ const app = express();
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 // 프로덕션 도메인 설정
-const getAllowedOrigins = (): string[] | true => {
-  if (isDevelopment) {
-    return true; // 개발 환경: 모든 origin 허용
-  }
-  
-  // 프로덕션: 환경 변수에서 도메인 가져오기
-  const domains = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map((d) => d.trim())
-    : [];
-  
-  // 기본 도메인 추가
-  const defaultDomains = [
-    "https://darling-torrone-5e5797.netlify.app",
-    "https://bilidamarket.com",
-    "http://bilidamarket.com",
-    "https://www.bilidamarket.com",
-    "http://www.bilidamarket.com",
-  ];
-  
-  // 중복 제거 및 병합
-  const allDomains = [...new Set([...defaultDomains, ...domains])];
-  return allDomains;
-};
+// ⚠️ 중요: Railway에서 NODE_ENV가 설정되지 않았을 수도 있으므로
+// Railway 환경에서는 항상 프로덕션 모드로 간주
+const isRailway = !!(
+  process.env.RAILWAY_ENVIRONMENT ||
+  process.env.RAILWAY_PROJECT_ID ||
+  process.env.RAILWAY_SERVICE_NAME ||
+  process.env.RAILWAY_DEPLOYMENT_ID
+);
+// 프로덕션 모드: NODE_ENV=production이거나 Railway 환경이거나 localhost가 아닌 경우
+const isProduction = isDevelopment === false || isRailway;
 
-const allowedOrigins = getAllowedOrigins();
+// 기본 허용 도메인 (항상 포함)
+const defaultDomains = [
+  "https://darling-torrone-5e5797.netlify.app",
+  "https://bilidamarket.com",
+  "http://bilidamarket.com",
+  "https://www.bilidamarket.com",
+  "http://www.bilidamarket.com",
+];
+
+// 환경 변수에서 추가 도메인 가져오기
+const envDomains = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((d) => d.trim()).filter(Boolean)
+  : [];
+
+// 모든 허용 도메인 병합 (중복 제거)
+const allowedOriginsList = [...new Set([...defaultDomains, ...envDomains])];
 
 // CORS 미들웨어 설정 - cors 패키지 사용
-// ⚠️ 중요: 모든 요청(정적 파일 포함)에 CORS 헤더를 적용하기 위해 가장 먼저 설정
 const corsOptions: CorsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // 개발 환경: 모든 origin 허용
-    if (allowedOrigins === true) {
+    // 개발 환경 (로컬): 모든 origin 허용
+    if (!isProduction) {
       callback(null, true);
       return;
     }
     
-    // origin이 없는 경우 (같은 도메인 요청, Postman 등) 허용
+    // origin이 없는 경우 (같은 도메인 요청, Postman, 서버 간 통신 등) 허용
     if (!origin) {
       callback(null, true);
       return;
     }
     
     // 프로덕션: 허용된 origin만
-    if (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) {
+    if (allowedOriginsList.includes(origin)) {
       callback(null, true);
     } else {
       console.warn(`⚠️ CORS 차단된 origin: ${origin}`);
+      console.warn(`   허용된 도메인: ${allowedOriginsList.join(", ")}`);
       callback(new Error("Not allowed by CORS"));
     }
   },
@@ -82,91 +84,26 @@ const corsOptions: CorsOptions = {
     "X-Requested-With",
     "Accept",
     "Origin",
-    "Cookie", // 쿠키 헤더 명시적 허용
+    "Cookie",
   ],
-  exposedHeaders: ["Set-Cookie"], // 클라이언트에서 읽을 수 있는 헤더
+  exposedHeaders: ["Set-Cookie"],
   maxAge: 86400, // 24시간 (preflight 캐시)
-  preflightContinue: false, // preflight 요청을 다음 미들웨어로 전달하지 않음
-  optionsSuccessStatus: 204, // OPTIONS 요청 성공 상태 코드
+  optionsSuccessStatus: 204,
 };
 
-// CORS 미들웨어 적용 (모든 요청에 대해)
-// ⚠️ Express 5 호환성을 위해 명시적으로 OPTIONS 요청 처리
-app.use((req, res, next) => {
-  // OPTIONS preflight 요청 명시적 처리
-  if (req.method === "OPTIONS") {
-    const origin = req.headers.origin;
-    
-    // Origin 검증
-    let allowOrigin: string | null = null;
-    
-    if (allowedOrigins === true) {
-      // 개발 환경: 모든 origin 허용
-      allowOrigin = origin || "*";
-    } else if (origin && Array.isArray(allowedOrigins)) {
-      // 프로덕션: 허용된 origin만
-      if (allowedOrigins.includes(origin)) {
-        allowOrigin = origin;
-      }
-    } else if (!origin) {
-      // Origin이 없는 경우 (같은 도메인 요청 등) - credentials가 true이므로 특정 origin 필요
-      // 허용 목록의 첫 번째 도메인 사용 (또는 요청 호스트)
-      if (Array.isArray(allowedOrigins) && allowedOrigins.length > 0) {
-        allowOrigin = allowedOrigins[0];
-      } else {
-        allowOrigin = "*";
-      }
-    }
-    
-    if (!allowOrigin) {
-      // 허용되지 않은 origin
-      return res.status(403).json({ error: "CORS policy violation" });
-    }
-    
-    // ⚠️ credentials가 true일 때는 origin을 *로 설정할 수 없음
-    if (allowOrigin !== "*") {
-      res.setHeader("Access-Control-Allow-Origin", allowOrigin);
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-    } else {
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      // credentials는 *와 함께 사용할 수 없으므로 false
-    }
-    
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cookie");
-    res.setHeader("Access-Control-Expose-Headers", "Set-Cookie");
-    res.setHeader("Access-Control-Max-Age", "86400");
-    return res.status(204).send();
-  }
-  next();
-});
-
-// CORS 미들웨어 적용 (일반 요청)
-// cors 패키지와 함께 명시적 CORS 헤더 추가 (Express 5 호환성)
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  
-  // Origin 검증 및 헤더 설정
-  if (allowedOrigins === true) {
-    // 개발 환경: 모든 origin 허용
-    if (origin) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-    }
-  } else if (origin && Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) {
-    // 프로덕션: 허용된 origin만
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
-  
-  // 항상 expose headers 설정
-  res.setHeader("Access-Control-Expose-Headers", "Set-Cookie");
-  
-  next();
-});
-
-// cors 패키지도 함께 사용 (이중 보호)
+// CORS 미들웨어 적용 (가장 먼저 설정)
 app.use(cors(corsOptions));
+
+// CORS 설정 로깅 (디버깅용)
+console.log("\n🔒 CORS 설정:");
+console.log(`   환경: ${isProduction ? "프로덕션" : "개발"}`);
+console.log(`   Railway 감지: ${isRailway ? "예" : "否"}`);
+console.log(`   NODE_ENV: ${process.env.NODE_ENV || "(설정되지 않음)"}`);
+console.log(`   허용된 도메인 수: ${allowedOriginsList.length}`);
+allowedOriginsList.forEach((domain, idx) => {
+  console.log(`   ${idx + 1}. ${domain}`);
+});
+console.log("");
 
 // 바디/쿠키
 app.use(express.json({ limit: "2mb" }));
@@ -185,7 +122,7 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/chats", chatsRouter);
 
 // 2. 정적 파일 (프로덕션 환경에서만)
-if (!isDevelopment) {
+if (isProduction && !isRailway) {
   const clientBuildPath = path.join(process.cwd(), "..", "client", "dist");
   app.use(express.static(clientBuildPath));
   
@@ -218,7 +155,9 @@ if (!isDevelopment) {
 }
 
 const server = http.createServer(app);
-initSocketServer(server, allowedOrigins);
+// Socket.IO에 전달할 allowedOrigins: 개발 환경이면 true, 아니면 배열
+const socketAllowedOrigins = !isProduction ? true : allowedOriginsList;
+initSocketServer(server, socketAllowedOrigins);
 
 (async () => {
   try {
@@ -254,7 +193,7 @@ initSocketServer(server, allowedOrigins);
       console.log("🚀 서버가 시작되었습니다!");
       console.log("=".repeat(50));
       
-      if (isDevelopment) {
+      if (!isProduction) {
         // 개발 환경
         console.log(`📍 로컬 접속: http://127.0.0.1:${port}`);
         
@@ -272,14 +211,14 @@ initSocketServer(server, allowedOrigins);
       } else {
         // 프로덕션 환경
         console.log(`📍 서버 포트: ${port}`);
-        if (allowedOrigins !== true && Array.isArray(allowedOrigins)) {
-          console.log("\n🌐 허용된 도메인:");
-          allowedOrigins.forEach((origin) => {
-            console.log(`   ${origin}`);
-          });
-        }
+        console.log("\n🌐 허용된 도메인:");
+        allowedOriginsList.forEach((origin) => {
+          console.log(`   ${origin}`);
+        });
         console.log("\n💡 프로덕션 모드로 실행 중입니다.");
-        console.log("   클라이언트 정적 파일이 서버에서 서빙됩니다.");
+        if (!isDevelopment) {
+          console.log("   클라이언트 정적 파일이 서버에서 서빙됩니다.");
+        }
       }
       
       console.log("=".repeat(50) + "\n");
