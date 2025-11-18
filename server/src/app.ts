@@ -36,14 +36,14 @@ const isRailway = !!(
 const isProduction = isDevelopment === false || isRailway;
   
 // 기본 허용 도메인 (항상 포함)
-const defaultDomains = [
-  "https://darling-torrone-5e5797.netlify.app",
-  "https://bilidamarket.com",
-  "http://bilidamarket.com",
-  "https://www.bilidamarket.com",
-  "http://www.bilidamarket.com",
-];
-
+  const defaultDomains = [
+    "https://darling-torrone-5e5797.netlify.app",
+    "https://bilidamarket.com",
+    "http://bilidamarket.com",
+    "https://www.bilidamarket.com",
+    "http://www.bilidamarket.com",
+  ];
+  
 // 환경 변수에서 추가 도메인 가져오기
 const envDomains = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((d) => d.trim()).filter(Boolean)
@@ -122,8 +122,7 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/chats", chatsRouter);
 
 // 2. 정적 파일 (프로덕션 환경에서만)
-// 🔥 수정된 부분: isProduction만 체크하도록 변경 (Railway 포함)
-if (isProduction) {
+if (isProduction && !isRailway) {
   const clientBuildPath = path.join(process.cwd(), "..", "client", "dist");
   app.use(express.static(clientBuildPath));
   
@@ -156,7 +155,6 @@ if (isProduction) {
 }
 
 const server = http.createServer(app);
-
 // Socket.IO에 전달할 allowedOrigins: 개발 환경이면 true, 아니면 배열
 const socketAllowedOrigins = !isProduction ? true : allowedOriginsList;
 initSocketServer(server, socketAllowedOrigins);
@@ -213,13 +211,13 @@ initSocketServer(server, socketAllowedOrigins);
       } else {
         // 프로덕션 환경
         console.log(`📍 서버 포트: ${port}`);
-        console.log("\n🌐 허용된 도메인:");
+          console.log("\n🌐 허용된 도메인:");
         allowedOriginsList.forEach((origin) => {
-          console.log(`   ${origin}`);
-        });
+            console.log(`   ${origin}`);
+          });
         console.log("\n💡 프로덕션 모드로 실행 중입니다.");
         if (!isDevelopment) {
-          console.log("   클라이언트 정적 파일이 서버에서 서빙됩니다.");
+        console.log("   클라이언트 정적 파일이 서버에서 서빙됩니다.");
         }
       }
       
