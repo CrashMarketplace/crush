@@ -91,7 +91,81 @@ const corsOptions: CorsOptions = {
 };
 
 // CORS 미들웨어 적용 (모든 요청에 대해)
-// cors 미들웨어가 자동으로 OPTIONS 요청을 처리하므로 별도로 app.options()를 호출할 필요 없음
+// ⚠️ Express 5 호환성을 위해 명시적으로 OPTIONS 요청 처리
+app.use((req, res, next) => {
+  // OPTIONS preflight 요청 명시적 처리
+  if (req.method === "OPTIONS") {
+    const origin = req.headers.origin;
+    
+    // Origin 검증
+    let allowOrigin: string | null = null;
+    
+    if (allowedOrigins === true) {
+      // 개발 환경: 모든 origin 허용
+      allowOrigin = origin || "*";
+    } else if (origin && Array.isArray(allowedOrigins)) {
+      // 프로덕션: 허용된 origin만
+      if (allowedOrigins.includes(origin)) {
+        allowOrigin = origin;
+      }
+    } else if (!origin) {
+      // Origin이 없는 경우 (같은 도메인 요청 등) - credentials가 true이므로 특정 origin 필요
+      // 허용 목록의 첫 번째 도메인 사용 (또는 요청 호스트)
+      if (Array.isArray(allowedOrigins) && allowedOrigins.length > 0) {
+        allowOrigin = allowedOrigins[0];
+      } else {
+        allowOrigin = "*";
+      }
+    }
+    
+    if (!allowOrigin) {
+      // 허용되지 않은 origin
+      return res.status(403).json({ error: "CORS policy violation" });
+    }
+    
+    // ⚠️ credentials가 true일 때는 origin을 *로 설정할 수 없음
+    if (allowOrigin !== "*") {
+      res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      // credentials는 *와 함께 사용할 수 없으므로 false
+    }
+    
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cookie");
+    res.setHeader("Access-Control-Expose-Headers", "Set-Cookie");
+    res.setHeader("Access-Control-Max-Age", "86400");
+    return res.status(204).send();
+  }
+  next();
+});
+
+// CORS 미들웨어 적용 (일반 요청)
+// cors 패키지와 함께 명시적 CORS 헤더 추가 (Express 5 호환성)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Origin 검증 및 헤더 설정
+  if (allowedOrigins === true) {
+    // 개발 환경: 모든 origin 허용
+    if (origin) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
+  } else if (origin && Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) {
+    // 프로덕션: 허용된 origin만
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  
+  // 항상 expose headers 설정
+  res.setHeader("Access-Control-Expose-Headers", "Set-Cookie");
+  
+  next();
+});
+
+// cors 패키지도 함께 사용 (이중 보호)
 app.use(cors(corsOptions));
 
 // 바디/쿠키
