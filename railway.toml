@@ -1,0 +1,6 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "cd server && npm install && npm run build && cd ../client && npm install && npm run build && cp -r dist ../server/client-dist"
+
+[start]
+startCommand = "cd server && npm start"
