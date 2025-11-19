@@ -23,6 +23,9 @@ import uploadsRouter from "./routes/uploads";
 
 const app = express();
 
+// ⭐ Railway / Proxy 환경에서 반드시 필요 (express-rate-limit 오류 해결)
+app.set("trust proxy", 1);
+
 // MODE
 const isDevelopment = process.env.NODE_ENV !== "production";
 const isRailway = Boolean(process.env.RAILWAY_PROJECT_ID);
