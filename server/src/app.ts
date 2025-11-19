@@ -13,13 +13,13 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
+import multer from "multer";
 
 import authRouter from "./routes/auth";
 import productsRouter from "./routes/products";
 import chatsRouter from "./routes/chats";
 import { initSocketServer } from "./realtime/socketManager";
 import uploadsRouter from "./routes/uploads";
-import multer from "multer";
 
 const app = express();
 
@@ -69,9 +69,12 @@ const apiLimiter = rateLimit({
 });
 app.use("/api", apiLimiter);
 
-// 정적 파일 서빙
-app.use(express.static(path.join(__dirname, "../uploads")));
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// 정적 파일 서빙 (환경변수 UPLOADS_DIR 우선)
+const uploadsPath = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : path.join(__dirname, "../uploads");
+app.use(express.static(uploadsPath));
+app.use("/uploads", express.static(uploadsPath));
 
 // API 라우트 (먼저 등록)
 app.use("/api/auth", authRouter);
@@ -79,20 +82,20 @@ app.use("/api/products", productsRouter);
 app.use("/api/chats", chatsRouter);
 app.use("/api/uploads", uploadsRouter);
 
+// legacy single 'upload' route: forward to same uploads router to avoid multer conflicts
+app.use("/api/upload", uploadsRouter);
+
 // Multer / upload-related errors -> return JSON instead of crashing
-app.use((err: any, _req: any, res: any, _next: any) => {
+app.use((err: any, _req: any, res: any, next: any) => {
+  if (!err) return next();
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ ok: false, error: err.message });
   }
-  if (err && err.message && /Unexpected field/i.test(err.message)) {
+  if (err && typeof err.message === "string" && /Unexpected field/i.test(err.message)) {
     return res.status(400).json({ ok: false, error: "unexpected_field" });
   }
-  // fallback: log and return generic error
-  if (err) {
-    console.error("Unhandled error:", err);
-    return res.status(500).json({ ok: false, error: "internal_error" });
-  }
-  return;
+  console.error("Unhandled error:", err);
+  return res.status(500).json({ ok: false, error: "internal_error" });
 });
 
 // ---------------------------

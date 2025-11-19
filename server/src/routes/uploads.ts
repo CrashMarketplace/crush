@@ -5,8 +5,10 @@ import fs from "fs";
 
 const router = Router();
 
-// 업로드 디렉토리 설정
-const uploadsDir = path.join(__dirname, "../../uploads");
+// 업로드 디렉토리 설정 (환경변수 우선)
+const uploadsDir = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : path.join(__dirname, "../../uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
