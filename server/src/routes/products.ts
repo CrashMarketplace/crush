@@ -5,15 +5,22 @@ import Review from "../models/Review";
 import { readUserFromReq } from "../utils/authToken";
 
 const router = Router();
+
+// ------------------------------
+// Zod Schemas
+// ------------------------------
 const statusUpdateSchema = z.object({
   status: z.enum(["selling", "reserved", "sold"]),
 });
+
 const reviewBodySchema = z.object({
   rating: z.number().int().min(1).max(5),
   comment: z.string().min(5).max(1000),
 });
 
-/** 등록 */
+// ------------------------------
+// 상품 등록
+// ------------------------------
 router.post("/", async (req, res) => {
   const user = readUserFromReq(req);
   if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
@@ -24,7 +31,10 @@ router.post("/", async (req, res) => {
     price: z.number().nonnegative(),
     category: z.string().optional().default("기타"),
     location: z.string().optional().default("미정"),
-    images: z.array(z.string().url()).optional().default([]),
+
+    // 🔥 여기 고쳤음: url() 제거 (Railway 절대 URL + Netlify 상대 URL 모두 허용)
+    images: z.array(z.string()).optional().default([]),
+
     usedAvailable: z.boolean().optional().default(false),
   });
 
@@ -37,23 +47,30 @@ router.post("/", async (req, res) => {
   return res.status(201).json({ ok: true, product: doc });
 });
 
-/** 목록 (최신순) */
+// ------------------------------
+// 목록 조회
+// ------------------------------
 router.get("/", async (_req, res) => {
   const list = await Product.find().sort({ createdAt: -1 }).limit(200);
   return res.json({ ok: true, products: list });
 });
 
-/** 단건 조회 */
+// ------------------------------
+// 단일 조회
+// ------------------------------
 router.get("/:id", async (req, res) => {
   const item = await Product.findById(req.params.id).populate(
     "seller",
     "displayName userId location avatarUrl"
   );
+
   if (!item) return res.status(404).json({ ok: false, error: "not_found" });
   return res.json({ ok: true, product: item });
 });
 
-/** 삭제 (본인만) */
+// ------------------------------
+// 삭제 (본인만)
+// ------------------------------
 router.delete("/:id", async (req, res) => {
   const user = readUserFromReq(req);
   if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
@@ -61,7 +78,6 @@ router.delete("/:id", async (req, res) => {
   const item = await Product.findById(req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: "not_found" });
 
-  // 본인 소유 체크
   if (String(item.seller) !== String(user.id)) {
     return res.status(403).json({ ok: false, error: "forbidden" });
   }
@@ -70,7 +86,9 @@ router.delete("/:id", async (req, res) => {
   return res.json({ ok: true, deleted: true });
 });
 
-/** 상태 업데이트 (판매완료 등) */
+// ------------------------------
+// 상태 업데이트
+// ------------------------------
 router.patch("/:id/status", async (req, res) => {
   const user = readUserFromReq(req);
   if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
@@ -91,10 +109,13 @@ router.patch("/:id/status", async (req, res) => {
 
   item.status = parsed.data.status;
   await item.save();
+
   return res.json({ ok: true, product: item });
 });
 
-/** 좋아요 등록 */
+// ------------------------------
+// 좋아요 등록
+// ------------------------------
 router.post("/:id/likes", async (req, res) => {
   const user = readUserFromReq(req);
   if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
@@ -118,7 +139,9 @@ router.post("/:id/likes", async (req, res) => {
   });
 });
 
-/** 좋아요 취소 */
+// ------------------------------
+// 좋아요 취소
+// ------------------------------
 router.delete("/:id/likes", async (req, res) => {
   const user = readUserFromReq(req);
   if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
@@ -129,6 +152,7 @@ router.delete("/:id/likes", async (req, res) => {
   const nextLikes = item.likes.filter(
     (like) => String(like) !== String(user.id)
   );
+
   if (nextLikes.length !== item.likes.length) {
     item.likes = nextLikes as typeof item.likes;
     await item.save();
@@ -141,7 +165,9 @@ router.delete("/:id/likes", async (req, res) => {
   });
 });
 
-/** 판매 완료 상품 거래 후기 목록 */
+// ------------------------------
+// 리뷰 목록
+// ------------------------------
 router.get("/:id/reviews", async (req, res) => {
   const product = await Product.findById(req.params.id).select("_id");
   if (!product) return res.status(404).json({ ok: false, error: "not_found" });
@@ -153,7 +179,9 @@ router.get("/:id/reviews", async (req, res) => {
   return res.json({ ok: true, reviews });
 });
 
-/** 거래 후기 작성/수정 */
+// ------------------------------
+// 리뷰 작성/수정
+// ------------------------------
 router.post("/:id/reviews", async (req, res) => {
   const user = readUserFromReq(req);
   if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
@@ -167,6 +195,7 @@ router.post("/:id/reviews", async (req, res) => {
 
   const product = await Product.findById(req.params.id);
   if (!product) return res.status(404).json({ ok: false, error: "not_found" });
+
   if (product.status !== "sold") {
     return res.status(400).json({
       ok: false,
