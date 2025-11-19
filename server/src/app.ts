@@ -10,13 +10,16 @@ import cors from "cors";
 import type { CorsOptions } from "cors";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import morgan from "morgan";
+import rateLimit from "express-rate-limit";
 
 import authRouter from "./routes/auth";
 import productsRouter from "./routes/products";
-import uploadRouter from "./routes/upload";
 import chatsRouter from "./routes/chats";
 import { initSocketServer } from "./realtime/socketManager";
 import uploadsRouter from "./routes/uploads";
+import multer from "multer";
 
 const app = express();
 
@@ -49,6 +52,22 @@ const corsOptions: CorsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
+app.use(helmet());
+app.use(morgan("tiny"));
+
+// 간단한 헬스체크 (API 라우트보다 먼저)
+app.get("/health", (_req, res) => {
+  return res.json({ ok: true, uptime: process.uptime() });
+});
+
+// rate limiter를 API 전체에 적용
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1분
+  max: 200, // 1분당 요청 수
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use("/api", apiLimiter);
 
 // 정적 파일 서빙
 app.use(express.static(path.join(__dirname, "../uploads")));
@@ -57,9 +76,24 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 // API 라우트 (먼저 등록)
 app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
-app.use("/api/upload", uploadRouter);
 app.use("/api/chats", chatsRouter);
 app.use("/api/uploads", uploadsRouter);
+
+// Multer / upload-related errors -> return JSON instead of crashing
+app.use((err: any, _req: any, res: any, _next: any) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+  if (err && err.message && /Unexpected field/i.test(err.message)) {
+    return res.status(400).json({ ok: false, error: "unexpected_field" });
+  }
+  // fallback: log and return generic error
+  if (err) {
+    console.error("Unhandled error:", err);
+    return res.status(500).json({ ok: false, error: "internal_error" });
+  }
+  return;
+});
 
 // ---------------------------
 // 프론트엔드 서빙 (마지막에 등록)

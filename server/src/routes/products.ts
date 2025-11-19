@@ -3,49 +3,8 @@ import { z } from "zod";
 import Product from "../models/Product";
 import Review from "../models/Review";
 import { readUserFromReq } from "../utils/authToken";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
 
 const router = Router();
-
-// 업로드 디렉토리 설정
-const uploadsDir = path.join(__dirname, "../../uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Multer 설정
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-    );
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: (req, file, cb) => {
-    const allowedMimes = [
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-    ];
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Invalid file type. Only images are allowed."));
-    }
-  },
-});
 
 // ------------------------------
 // Zod Schemas
@@ -73,8 +32,18 @@ router.post("/", async (req, res) => {
     category: z.string().optional().default("기타"),
     location: z.string().optional().default("미정"),
 
-    // 🔥 여기 고쳤음: url() 제거 (Railway 절대 URL + Netlify 상대 URL 모두 허용)
-    images: z.array(z.string()).optional().default([]),
+    images: z
+      .array(z.string())
+      .optional()
+      .default([])
+      .refine(
+        (arr) =>
+          arr.every(
+            (s) =>
+              s.startsWith("/uploads/") || /^https?:\/\/.+$/.test(s)
+          ),
+        { message: "images must be /uploads/... or http(s) URLs" }
+      ),
 
     usedAvailable: z.boolean().optional().default(false),
   });
