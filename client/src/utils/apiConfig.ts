@@ -1,7 +1,5 @@
 /**
  * API 기본 주소 가져오기
- * Netlify 환경 변수(VITE_API_URL)를 사용하고,
- * 없으면 개발 환경에서만 localhost를 사용
  */
 export function getApiBaseUrl(): string {
   const viteApiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE;
@@ -13,7 +11,6 @@ export function getApiBaseUrl(): string {
     return clean;
   }
 
-  // 개발 환경
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host === "localhost" || host === "127.0.0.1") {
@@ -28,9 +25,7 @@ export function getApiBaseUrl(): string {
 export const API_BASE = getApiBaseUrl();
 
 /**
- * API URL 생성 (절대 /api 붙이지 않음!!)
- * 서버가 /api prefix를 사용하지 않으므로 그대로 path만 붙임
- * ex) buildApiUrl("/products") → https://xxx/products
+ * API URL 생성
  */
 export function buildApiUrl(path: string): string {
   if (!path.startsWith("/")) {
@@ -38,3 +33,9 @@ export function buildApiUrl(path: string): string {
   }
   return `${API_BASE}${path}`;
 }
+
+/**
+ * SOCKET 서버 기본 주소
+ */
+export const SOCKET_BASE =
+  import.meta.env.VITE_SOCKET_BASE?.trim() || API_BASE;
