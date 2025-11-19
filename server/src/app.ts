@@ -1,6 +1,6 @@
 // server/src/app.ts
 import dotenv from "dotenv";
-dotenv.config(); // ⬅️ 전역에서 단 한 번만 로드. 가장 위에 있어야 함!
+dotenv.config();
 
 import path from "path";
 import http from "http";
@@ -19,64 +19,53 @@ import { initSocketServer } from "./realtime/socketManager";
 
 const app = express();
 
-// 환경 감지
+// MODE
 const isDevelopment = process.env.NODE_ENV !== "production";
-
-// Railway 환경인지 감지
-const isRailway = Boolean(
-  process.env.RAILWAY_ENVIRONMENT ||
-    process.env.RAILWAY_PROJECT_ID ||
-    process.env.RAILWAY_SERVICE_NAME ||
-    process.env.RAILWAY_DEPLOYMENT_ID
-);
-
+const isRailway = Boolean(process.env.RAILWAY_PROJECT_ID);
 const isProduction = !isDevelopment || isRailway;
 
-// CORS 기본 도메인
-const defaultDomains = [
+// ---- CORS ----
+const allowedOriginsList = [
   "https://darling-torrone-5e5797.netlify.app",
   "https://bilidamarket.com",
-  "http://bilidamarket.com",
   "https://www.bilidamarket.com",
-  "http://www.bilidamarket.com",
+  "http://localhost:5173",
+  ...(process.env.ALLOWED_ORIGINS?.split(",").map((x) => x.trim()) || []),
 ];
 
-const envDomains = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map((d) => d.trim())
-  : [];
-
-const allowedOriginsList = [...new Set([...defaultDomains, ...envDomains])];
-
-// CORS 설정
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     if (!isProduction) return callback(null, true);
     if (!origin) return callback(null, true);
 
-    if (allowedOriginsList.includes(origin)) callback(null, true);
-    else callback(new Error("Not allowed by CORS"));
+    if (allowedOriginsList.includes(origin)) return callback(null, true);
+    console.log("❌ BLOCKED ORIGIN:", origin);
+    return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
 };
 
 app.use(cors(corsOptions));
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "5mb" }));
 app.use(cookieParser());
 
-// 업로드 파일 정적 서빙
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+// ---- uploads 경로 수정 (Railway 호환) ----
+const uploadsPath = path.join(__dirname, "../uploads");
+console.log("📁 Upload Serving Path:", uploadsPath);
+app.use("/uploads", express.static(uploadsPath));
 
-// 헬스 체크
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
-// API 라우트
+// ---- Health check ----
+app.get("/api/health", (_, res) => res.json({ ok: true }));
+
+// ---- API ----
 app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chats", chatsRouter);
 
 // ---------------------------
-// 프론트엔드 서빙 (프로덕션)
+// 프론트엔드 서빙
 // ---------------------------
 if (isProduction) {
   const clientPath = path.join(__dirname, "../../client/dist");
@@ -84,7 +73,7 @@ if (isProduction) {
 
   app.use(express.static(clientPath));
 
-  app.get(/.*/, (req, res) => {
+  app.get("*", (req, res) => {
     if (req.path.startsWith("/api")) {
       return res.status(404).json({ error: "API Not Found" });
     }
@@ -92,9 +81,7 @@ if (isProduction) {
   });
 }
 
-// ---------------------------
-// 서버 실행
-// ---------------------------
+// ---- Start Server ----
 const server = http.createServer(app);
 const socketAllowedOrigins = !isProduction ? true : allowedOriginsList;
 
@@ -106,7 +93,6 @@ initSocketServer(server, socketAllowedOrigins);
     console.log("✅ MongoDB connected");
 
     const port = Number(process.env.PORT) || 4000;
-
     server.listen(port, "0.0.0.0", () => {
       console.log("=================================");
       console.log("🚀 Server started successfully!");
