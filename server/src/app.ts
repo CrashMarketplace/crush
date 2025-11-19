@@ -19,11 +19,11 @@ import authRouter from "./routes/auth";
 import productsRouter from "./routes/products";
 import chatsRouter from "./routes/chats";
 import { initSocketServer } from "./realtime/socketManager";
-import uploadsRouter from "./routes/uploads";
+import uploadsRouter from "./routes/upload";
 
 const app = express();
 
-// ⭐ Railway / Proxy 환경에서 반드시 필요 (express-rate-limit 오류 해결)
+// ⭐ Railway / Proxy 환경에서 반드시 필요 (express-rate-limit 오류 방지)
 app.set("trust proxy", 1);
 
 // MODE
@@ -58,37 +58,38 @@ app.use(cookieParser());
 app.use(helmet());
 app.use(morgan("tiny"));
 
-// 간단한 헬스체크 (API 라우트보다 먼저)
+// Health check
 app.get("/health", (_req, res) => {
   return res.json({ ok: true, uptime: process.uptime() });
 });
 
-// rate limiter를 API 전체에 적용
+// ---- Rate Limit ----
 const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1분
-  max: 200, // 1분당 요청 수
+  windowMs: 60 * 1000,
+  max: 200,
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use("/api", apiLimiter);
 
-// 정적 파일 서빙 (환경변수 UPLOADS_DIR 우선)
+// ---- Static uploads ----
 const uploadsPath = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.join(__dirname, "../uploads");
+
 app.use(express.static(uploadsPath));
 app.use("/uploads", express.static(uploadsPath));
 
-// API 라우트 (먼저 등록)
+// ---- API Routes ----
 app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/chats", chatsRouter);
 app.use("/api/uploads", uploadsRouter);
 
-// legacy single 'upload' route: forward to same uploads router to avoid multer conflicts
-app.use("/api/upload", uploadsRouter);
+// ❌ 충돌 제거 (절대로 중복 사용 금지)
+// app.use("/api/upload", uploadsRouter);
 
-// Multer / upload-related errors -> return JSON instead of crashing
+// ---- Multer Error Handling ----
 app.use((err: any, _req: any, res: any, next: any) => {
   if (!err) return next();
   if (err instanceof multer.MulterError) {
@@ -101,16 +102,14 @@ app.use((err: any, _req: any, res: any, next: any) => {
   return res.status(500).json({ ok: false, error: "internal_error" });
 });
 
-// ---------------------------
-// 프론트엔드 서빙 (마지막에 등록)
-// ---------------------------
+// ---- Frontend Serve (Production) ----
 if (isProduction) {
   const clientPath = path.join(__dirname, "../../client/dist");
   console.log("📦 Serving frontend from:", clientPath);
 
   app.use(express.static(clientPath));
 
-  app.use((req, res, next) => {
+  app.use((req, res) => {
     if (req.path.startsWith("/api")) {
       return res.status(404).json({ error: "API Not Found" });
     }
