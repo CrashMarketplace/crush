@@ -7,11 +7,14 @@ import { readUserFromReq } from "../utils/authToken";
 
 const router = Router();
 
-// 업로드 디렉토리 준비
-const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+// ----------- 업로드 디렉토리 생성 (Railway에서도 정상) -----------
+const uploadDir = path.resolve("uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("📁 uploads 폴더 생성됨:", uploadDir);
+}
 
-// multer 설정
+// ----------- Multer 설정 -----------
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
   filename: (_req, file, cb) => {
@@ -32,22 +35,25 @@ const fileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024, files: 5 }, // 5MB, 최대 5장
+  limits: { fileSize: 5 * 1024 * 1024, files: 5 }, // 5MB, 5장
 });
 
-// 절대 URL 계산 유틸
+// ----------- 절대 URL 계산 함수 (Railway 완벽 대응) -----------
 function getBaseUrl(req: Request) {
-  // .env에 명시되어 있으면 가장 우선
-  if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL;
+  // 💡 1. .env에서 직접 지정한 값이 있으면 항상 우선
+  if (process.env.PUBLIC_BASE_URL) {
+    return process.env.PUBLIC_BASE_URL.replace(/\/$/, "");
+  }
 
-  // 프록시 환경 고려(가능하면)
+  // 💡 2. x-forwarded-proto/host (Railway 프록시)
   const proto =
     (req.headers["x-forwarded-proto"] as string) || req.protocol || "http";
-  const host = req.get("host"); // ex) localhost:4000
+  const host = req.headers["x-forwarded-host"] || req.get("host");
+
   return `${proto}://${host}`;
 }
 
-// POST /api/uploads/images
+// ----------- API: 이미지 업로드 -----------
 router.post(
   "/images",
   upload.array("files", 5),
@@ -56,7 +62,6 @@ router.post(
     if (!user)
       return res.status(401).json({ ok: false, error: "unauthorized" });
 
-    // 타입: 런타임에 multer가 주입, 안전 캐스팅
     const files =
       (req as Request & { files?: Express.Multer.File[] }).files ?? [];
 
