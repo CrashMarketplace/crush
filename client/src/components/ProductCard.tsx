@@ -13,19 +13,27 @@ interface Props {
 export default function ProductCard({ item, onDeleted }: Props) {
   const { user } = useAuth();
   const [deleting, setDeleting] = useState(false);
-  const imageSrc = item.images?.[0] || "/placeholder.png";
+
+  // ⭐ 이미지 경로 수정 (Railway 서버 절대경로)
+  const rawImage = item.images?.[0];
+  const imageSrc = rawImage
+    ? `${API_BASE}/uploads/${rawImage}`
+    : "/placeholder.png";
+
   const dateText = item.createdAt
     ? new Date(item.createdAt).toLocaleDateString()
     : "";
 
   const sellerId = getSellerId(item.seller);
   const canDelete = user && sellerId && String(user.id) === sellerId;
+
   const statusText =
     item.status === "sold"
       ? "판매완료"
       : item.status === "reserved"
       ? "예약중"
       : "판매중";
+
   const statusTone =
     item.status === "sold"
       ? "bg-red-100 text-red-700"
@@ -73,11 +81,12 @@ export default function ProductCard({ item, onDeleted }: Props) {
             {statusText}
           </div>
         ) : null}
+
         {canDelete ? (
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="absolute top-2 right-2 px-2 py-1 text-xs font-semibold text-white bg-white/10 backdrop-blur-md border border-white/30 rounded hover:bg-white/20 disabled:opacity-60 shadow-sm"
+            className="absolute px-2 py-1 text-xs font-semibold text-white border rounded shadow-sm top-2 right-2 bg-white/10 backdrop-blur-md border-white/30 hover:bg-white/20 disabled:opacity-60"
             aria-label="상품 삭제"
             title="내 상품만 삭제 가능"
           >
@@ -85,6 +94,7 @@ export default function ProductCard({ item, onDeleted }: Props) {
           </button>
         ) : null}
       </div>
+
       <div className="p-3">
         <h3 className="text-sm line-clamp-1">{item.title}</h3>
         {item.usedAvailable ? (
@@ -92,9 +102,11 @@ export default function ProductCard({ item, onDeleted }: Props) {
             <span className="badge badge-yellow">중고 가능</span>
           </div>
         ) : null}
+
         <p className="mt-1 font-semibold">
           {Number(item.price).toLocaleString()}원
         </p>
+
         <div className="mt-1">
           <span
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusTone}`}
@@ -102,6 +114,7 @@ export default function ProductCard({ item, onDeleted }: Props) {
             {statusText}
           </span>
         </div>
+
         <div className="flex items-center justify-between mt-1 text-xs text-gray-500">
           <span>{item.location || "지역 정보 없음"}</span>
           <span>{dateText}</span>
