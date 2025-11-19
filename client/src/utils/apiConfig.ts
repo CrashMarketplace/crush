@@ -25,13 +25,14 @@ export function getApiBaseUrl(): string {
 export const API_BASE = getApiBaseUrl();
 
 /**
- * API URL 생성
+ * API URL 생성 (/api prefix 자동 추가)
  */
 export function buildApiUrl(path: string): string {
   if (!path.startsWith("/")) {
     path = "/" + path;
   }
-  return `${API_BASE}${path}`;
+
+  return `${API_BASE}/api${path}`;
 }
 
 /**
