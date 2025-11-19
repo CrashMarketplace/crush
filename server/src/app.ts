@@ -16,8 +16,7 @@ import productsRouter from "./routes/products";
 import uploadRouter from "./routes/upload";
 import chatsRouter from "./routes/chats";
 import { initSocketServer } from "./realtime/socketManager";
-import uploadRoutes from "./routes/uploads";
-import productRoutes from "./routes/products";
+import uploadsRouter from "./routes/uploads";
 
 const app = express();
 
@@ -49,18 +48,21 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
+
+// 정적 파일 서빙
 app.use(express.static(path.join(__dirname, "../uploads")));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// API 라우트 (먼저 등록)
 app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chats", chatsRouter);
-app.use("/api/uploads", uploadRoutes);
-app.use("/api/products", productRoutes);
+app.use("/api/uploads", uploadsRouter);
 
 // ---------------------------
-// 프론트엔드 서빙
+// 프론트엔드 서빙 (마지막에 등록)
 // ---------------------------
 if (isProduction) {
   const clientPath = path.join(__dirname, "../../client/dist");
