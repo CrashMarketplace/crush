@@ -266,14 +266,6 @@ router.post("/:id/reviews", async (req, res) => {
   return res.status(201).json({ ok: true, review });
 });
 
-// 이미지 업로드
-router.post("/uploads/images", upload.single("image"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ ok: false, error: "No file uploaded" });
-  }
-
-  const imageUrl = `/uploads/${req.file.filename}`;
-  return res.json({ ok: true, url: imageUrl });
-});
+// 이미지 업로드는 제거 (별도 라우트 파일에서 처리)
 
 export default router;
