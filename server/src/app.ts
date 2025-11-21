@@ -17,9 +17,10 @@ import multer from "multer";
 
 import authRouter from "./routes/auth";
 import productsRouter from "./routes/products";
+import uploadRouter from "./routes/upload";
 import chatsRouter from "./routes/chats";
 import { initSocketServer } from "./realtime/socketManager";
-import uploadsRouter from "./routes/upload";
+import uploadsRouter from "./routes/uploads";
 
 const app = express();
 
@@ -72,19 +73,31 @@ const apiLimiter = rateLimit({
 });
 app.use("/api", apiLimiter);
 
-// ---- Static uploads ----
+// ---- 정적 파일 서빙 (환경변수 UPLOADS_DIR 우선)
 const uploadsPath = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.join(__dirname, "../uploads");
 
+// CORS 헤더 추가 (이미지 크로스 오리진 로드 허용)
+const uploadsCorsMiddleware = (req: any, res: any, next: any) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+};
+
+app.use("/uploads", uploadsCorsMiddleware, express.static(uploadsPath));
+// keep a fallback static for direct file access if needed
 app.use(express.static(uploadsPath));
-app.use("/uploads", express.static(uploadsPath));
 
 // ---- API Routes ----
 app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/chats", chatsRouter);
 app.use("/api/uploads", uploadsRouter);
+
+// legacy singular route
+app.use("/api/upload", uploadRouter);
 
 // ❌ 충돌 제거 (절대로 중복 사용 금지)
 // app.use("/api/upload", uploadsRouter);
