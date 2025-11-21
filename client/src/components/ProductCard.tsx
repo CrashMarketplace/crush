@@ -17,7 +17,7 @@ export default function ProductCard({ item, onDeleted }: Props) {
   // ⭐ 이미지 경로 수정 (Railway 서버 절대경로)
   const rawImage = item.images?.[0];
   const imageSrc = rawImage
-    ? `${API_BASE}/uploads/${rawImage}`
+    ? rawImage
     : "/placeholder.png";
 
   const dateText = item.createdAt
