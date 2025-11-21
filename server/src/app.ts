@@ -118,21 +118,26 @@ app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/chats", chatsRouter);
 app.use("/api/uploads", uploadsRouter);
+// keep legacy mount but forward to uploads router
+app.use("/api/upload", uploadsRouter);
 
-// legacy singular route
-app.use("/api/upload", uploadRouter);
-
-// ❌ 충돌 제거 (절대로 중복 사용 금지)
-// app.use("/api/upload", uploadsRouter);
-
-// ---- Multer Error Handling ----
-app.use((err: any, _req: any, res: any, next: any) => {
+// Multer / upload-related errors -> return JSON instead of crashing
+app.use((err: any, req: any, res: any, next: any) => {
   if (!err) return next();
+  console.error("Global error handler - path:", req.path, "headers:", {
+    origin: req.get("origin"),
+    "content-type": req.get("content-type"),
+  });
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ ok: false, error: err.message });
   }
   if (err && typeof err.message === "string" && /Unexpected field/i.test(err.message)) {
-    return res.status(400).json({ ok: false, error: "unexpected_field" });
+    return res.status(400).json({
+      ok: false,
+      error: "unexpected_field",
+      message:
+        "Use field name 'image' or 'images' (or 'file', 'files') in the multipart/form-data request.",
+    });
   }
   console.error("Unhandled error:", err);
   return res.status(500).json({ ok: false, error: "internal_error" });
