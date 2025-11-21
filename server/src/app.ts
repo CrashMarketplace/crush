@@ -78,16 +78,39 @@ const uploadsPath = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.join(__dirname, "../uploads");
 
-// CORS 헤더 추가 (이미지 크로스 오리진 로드 허용)
+// CORS 헤더 for uploads: set explicit origin in production (needed if requests include credentials)
 const uploadsCorsMiddleware = (req: any, res: any, next: any) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.get("Origin");
+  if (!origin) {
+    // no origin header (same-origin or direct file access)
+    return next();
+  }
+
+  if (!isProduction) {
+    // during development allow all origins
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  } else {
+    // in production only allow origins listed in allowedOriginsList
+    if (allowedOriginsList.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      // if frontend sends credentials, allow them too
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    } else {
+      // do not set Access-Control-Allow-Origin -> browser will block
+      // or respond without CORS header to indicate not allowed
+    }
+  }
+
   res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.setHeader("Vary", "Origin");
   next();
 };
 
 app.use("/uploads", uploadsCorsMiddleware, express.static(uploadsPath));
-// keep a fallback static for direct file access if needed
 app.use(express.static(uploadsPath));
 
 // ---- API Routes ----
