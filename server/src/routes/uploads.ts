@@ -14,7 +14,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Multer 설정 (accept any field, but validate file types)
+// Multer 설정 (accept fixed set of field names to avoid Unexpected field)
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadsDir),
   filename: (_req, file, cb) => {
@@ -33,18 +33,39 @@ const upload = multer({
   },
 });
 
-// POST /images - accept any field name(s) but require at least one file
+// Accept these common field names; prevents Unexpected field error if client uses any of them
+const uploadFields = [
+  { name: "image", maxCount: 5 },
+  { name: "images", maxCount: 5 },
+  { name: "file", maxCount: 5 },
+  { name: "files", maxCount: 5 },
+  { name: "image[]", maxCount: 5 },
+  { name: "images[]", maxCount: 5 },
+];
+
+// POST /images - accept common field name(s)
 router.post("/images", (req, res) => {
-  upload.any()(req as any, res as any, (err: any) => {
-    // Log error for debugging
+  upload.fields(uploadFields)(req as any, res as any, (err: any) => {
+    // Log headers & fields for debugging
+    console.log("Upload attempt:", req.method, req.path);
+    console.log("Headers:", {
+      origin: req.get("origin"),
+      "content-type": req.get("content-type"),
+    });
+
     if (err) {
       console.error("Upload error:", err);
-    }
-
-    // If multer returned an error, reply clearly
-    if (err) {
       if (err instanceof multer.MulterError) {
         return res.status(400).json({ ok: false, error: err.message });
+      }
+      if (err && typeof err.message === "string" && /Unexpected field/i.test(err.message)) {
+        // Common guidance message
+        return res.status(400).json({
+          ok: false,
+          error: "unexpected_field",
+          message:
+            "Use field name 'image' or 'images' (or 'file', 'files') in the multipart/form-data request.",
+        });
       }
       return res.status(400).json({ ok: false, error: err.message || "upload_failed" });
     }
@@ -53,18 +74,30 @@ router.post("/images", (req, res) => {
     const user = readUserFromReq(req);
     if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
 
-    const files = (req as any).files as Express.Multer.File[] | undefined;
+    // Collect files from all allowed fields
+    const filesByField = (req as any).files as { [key: string]: Express.Multer.File[] } | undefined;
+    let files: Express.Multer.File[] = [];
+    if (filesByField && Object.keys(filesByField).length > 0) {
+      for (const key of Object.keys(filesByField)) {
+        files = files.concat(filesByField[key]);
+      }
+    }
+
+    // Fallback: if multer didn't populate req.files (shouldn't happen), check req.file
+    if ((!files || files.length === 0) && (req as any).file) {
+      files = [(req as any).file];
+    }
+
     if (!files || files.length === 0) {
       return res.status(400).json({ ok: false, error: "no_file_uploaded" });
     }
 
-    // Validate each file (Multer's fileFilter already did this, but double-check)
+    // Validate and respond
     const uploadedUrls: string[] = [];
     const failedNames: string[] = [];
-
     for (const file of files) {
       if (!file.mimetype || !/^image\/(jpeg|png|gif|webp)$/.test(file.mimetype)) {
-        // remove file if exists
+        // remove invalid file if saved
         try {
           fs.unlinkSync(path.join(uploadsDir, file.filename));
         } catch (_e) {}
@@ -78,7 +111,6 @@ router.post("/images", (req, res) => {
       return res.status(400).json({ ok: false, error: "invalid_file_types", failed: failedNames });
     }
 
-    // If only one file was uploaded, return url. Else return urls.
     if (uploadedUrls.length === 1) {
       return res.json({ ok: true, url: uploadedUrls[0] });
     }
