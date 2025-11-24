@@ -2,6 +2,7 @@
  * API 기본 주소 가져오기
  */
 export function getApiBaseUrl(): string {
+  // Vercel 배포 시: Settings > Environment Variables에서 VITE_API_URL 설정 필수
   const viteApiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE;
 
   if (viteApiUrl && viteApiUrl.trim() !== "") {

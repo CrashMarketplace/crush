@@ -48,7 +48,12 @@ const corsOptions: CorsOptions = {
 
     if (allowedOriginsList.includes(origin)) return callback(null, true);
 
-    // 🔥 Netlify Deploy Preview 허용 (예: https://65a...--darling-torrone-5e5797.netlify.app)
+    // 🔥 Vercel 배포 도메인 허용 (모든 vercel.app 서브도메인)
+    if (origin.endsWith(".vercel.app")) {
+      return callback(null, true);
+    }
+
+    // 🔥 Netlify Deploy Preview 허용 (기존 호환성 유지)
     if (origin.endsWith("--darling-torrone-5e5797.netlify.app")) {
       return callback(null, true);
     }
