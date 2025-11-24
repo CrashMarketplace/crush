@@ -3,6 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { readUserFromReq } from "../utils/authToken";
+import { uploadBufferToStorage, isCloudStorageEnabled } from "../lib/storage";
 
 const router = Router();
 
@@ -14,22 +15,31 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Multer 설정 (accept fixed set of field names to avoid Unexpected field)
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
+// Use memory storage when cloud enabled, else disk
+const storage = isCloudStorageEnabled()
+  ? multer.memoryStorage()
+  : multer.diskStorage({
+      destination: (_req, _file, cb) => cb(null, uploadsDir),
+      filename: (_req, file, cb) => {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+      },
+    });
 
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (_req, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    // Allow bmp to match client-side acceptance (ProductNew.tsx)
+    const allowed = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/bmp",
+    ];
     if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error("Invalid file type. Only images are allowed."));
+    else cb(new Error("Invalid file type. Only images (jpg,png,gif,webp,bmp) are allowed."));
   },
 });
 
@@ -45,7 +55,7 @@ const uploadFields = [
 
 // POST /images - accept common field name(s)
 router.post("/images", (req, res) => {
-  upload.fields(uploadFields)(req as any, res as any, (err: any) => {
+  upload.fields(uploadFields)(req as any, res as any, async (err: any) => {
     // Log headers & fields for debugging
     console.log("Upload attempt:", req.method, req.path);
     console.log("Headers:", {
@@ -92,29 +102,37 @@ router.post("/images", (req, res) => {
       return res.status(400).json({ ok: false, error: "no_file_uploaded" });
     }
 
-    // Validate and respond
     const uploadedUrls: string[] = [];
     const failedNames: string[] = [];
     for (const file of files) {
-      if (!file.mimetype || !/^image\/(jpeg|png|gif|webp)$/.test(file.mimetype)) {
-        // remove invalid file if saved
-        try {
-          fs.unlinkSync(path.join(uploadsDir, file.filename));
-        } catch (_e) {}
+      const typeOk = /^image\/(jpeg|png|gif|webp|bmp)$/.test(file.mimetype || "");
+      if (!typeOk) {
         failedNames.push(file.originalname);
         continue;
       }
-      uploadedUrls.push(`/uploads/${file.filename}`);
+
+      try {
+        if (isCloudStorageEnabled()) {
+          // memory storage -> file.buffer available
+          const { url } = await uploadBufferToStorage(file.buffer, file.mimetype, file.originalname);
+          uploadedUrls.push(url);
+        } else {
+          // disk storage already saved -> build local URL
+          uploadedUrls.push(`/uploads/${file.filename}`);
+        }
+      } catch (e: any) {
+        console.error("single file upload failed", e);
+        failedNames.push(file.originalname);
+      }
     }
 
     if (uploadedUrls.length === 0) {
-      return res.status(400).json({ ok: false, error: "invalid_file_types", failed: failedNames });
+      return res.status(400).json({ ok: false, error: "invalid_or_failed", failed: failedNames });
     }
-
     if (uploadedUrls.length === 1) {
-      return res.json({ ok: true, url: uploadedUrls[0] });
+      return res.json({ ok: true, url: uploadedUrls[0], urls: uploadedUrls });
     }
-    return res.json({ ok: true, urls: uploadedUrls });
+    return res.json({ ok: true, urls: uploadedUrls, failed: failedNames.length ? failedNames : undefined });
   });
 });
 
