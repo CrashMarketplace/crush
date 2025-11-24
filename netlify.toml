@@ -1,18 +1,1 @@
-[build]
-base = "client"
-command = "npm run build"
-publish = "dist"
-
-[build.environment]
-NODE_VERSION = "20"
-# ⚠️ 중요: Netlify 대시보드에서 다음 환경 변수를 설정해야 합니다:
-# Site settings > Environment variables에서 추가:
-# Key: VITE_API_URL
-# Value: https://crush-production.up.railway.app
-# ⚠️ 절대 /api를 붙이지 마세요! (예: ❌ https://xxx.up.railway.app/api)
-# 환경 변수 설정 후 반드시 "Clear cache & redeploy" 실행!
-
-[[plugins]]
-package = "@netlify/plugin-lighthouse"
-  [plugins.inputs]
-  fail_deploy_on_score_thresholds = false
+# ⚠️ Vercel로 이전되었습니다. 이 파일은 삭제하셔도 됩니다.
