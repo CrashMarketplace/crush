@@ -67,7 +67,10 @@ const corsOptions: CorsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
-app.use(helmet());
+
+// 🔥 [수정] Helmet 설정 변경: 타 도메인(Vercel)에서 이미지 로딩 허용
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+
 app.use(morgan("tiny"));
 
 // Health check
