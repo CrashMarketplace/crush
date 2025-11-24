@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import path from "path";
+import fs from "fs";
 import http from "http";
 
 import express from "express";
@@ -24,7 +25,7 @@ import uploadsRouter from "./routes/uploads";
 
 const app = express();
 
-// ⭐ Railway / Proxy 환경에서 반드시 필요 (express-rate-limit 오류 방지)
+// ⭐ Railway / Proxy 환경에서 반드시 필요
 app.set("trust proxy", 1);
 
 // MODE
@@ -32,7 +33,6 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 const isRailway = Boolean(process.env.RAILWAY_PROJECT_ID);
 const isProduction = !isDevelopment || isRailway;
 
-// ---- CORS ----
 const allowedOriginsList = [
   "https://darling-torrone-5e5797.netlify.app",
   "https://bilidamarket.com",
@@ -41,35 +41,25 @@ const allowedOriginsList = [
   ...(process.env.ALLOWED_ORIGINS?.split(",").map((x) => x.trim()) || []),
 ];
 
+// ---- CORS ----
+// 🔥 [수정] 배포 환경 통신 문제 해결을 위한 강력한 CORS 설정
 const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
-    if (!isProduction) return callback(null, true);
-    if (!origin) return callback(null, true);
-
-    if (allowedOriginsList.includes(origin)) return callback(null, true);
-
-    // 🔥 Vercel 배포 도메인 허용 (모든 vercel.app 서브도메인)
-    if (origin.endsWith(".vercel.app")) {
-      return callback(null, true);
-    }
-
-    // 🔥 Netlify Deploy Preview 허용 (기존 호환성 유지)
-    if (origin.endsWith("--darling-torrone-5e5797.netlify.app")) {
-      return callback(null, true);
-    }
-
-    console.log("❌ BLOCKED ORIGIN:", origin);
-    return callback(new Error("Not allowed by CORS"));
-  },
-  credentials: true,
+  origin: true, // 요청한 Origin을 그대로 반환 (모든 도메인 허용 효과)
+  credentials: true, // 쿠키/인증정보 허용
 };
 
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-// 🔥 [수정] Helmet 설정 변경: 타 도메인(Vercel)에서 이미지 로딩 허용 (ERR_BLOCKED_BY_RESPONSE 해결)
+// 🔥 [수정] Helmet 설정: 타 도메인 이미지 로딩 허용
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+
+// 🔥 [추가] 요청 로그 미들웨어 (서버 도달 여부 확인용)
+app.use((req, res, next) => {
+  console.log(`📡 [${req.method}] ${req.path} | Origin: ${req.headers.origin || 'No Origin'}`);
+  next();
+});
 
 app.use(morgan("tiny"));
 
@@ -87,40 +77,34 @@ const apiLimiter = rateLimit({
 });
 app.use("/api", apiLimiter);
 
-// ---- 정적 파일 서빙 (환경변수 UPLOADS_DIR 우선)
+// ---- 정적 파일 서빙 ----
 const uploadsPath = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.join(__dirname, "../uploads");
 
-// CORS 헤더 for uploads: set explicit origin in production (needed if requests include credentials)
-const uploadsCorsMiddleware = (req: any, res: any, next: any) => {
-  const origin = req.get("Origin");
-  if (!origin) {
-    // no origin header (same-origin or direct file access)
-    return next();
+// 업로드 폴더 자동 생성
+if (!fs.existsSync(uploadsPath)) {
+  try {
+    fs.mkdirSync(uploadsPath, { recursive: true });
+    console.log(`✅ Created uploads directory: ${uploadsPath}`);
+  } catch (e) {
+    console.error("❌ Failed to create uploads directory:", e);
   }
+}
 
-  // 🔥 [수정] 정적 파일 요청에 대해서도 Vercel/Netlify 도메인 허용 로직 추가
-  const isAllowed = (o: string) => {
-    if (allowedOriginsList.includes(o)) return true;
-    if (o.endsWith(".vercel.app")) return true;
-    if (o.endsWith("--darling-torrone-5e5797.netlify.app")) return true;
-    return false;
-  };
-
-  if (!isProduction) {
-    // during development allow all origins
-    res.setHeader("Access-Control-Allow-Origin", "*");
+// CORS 헤더 for uploads
+const uploadsCorsMiddleware = (req: any, res: any, next: any) => {
+  // 이미지 로딩 차단 방지
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  
+  const origin = req.get("Origin");
+  // 🔥 [수정] 이미지 요청도 모든 Origin 허용 (이미지 엑박 방지)
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
   } else {
-    // in production only allow origins listed in allowedOriginsList OR Vercel/Netlify patterns
-    if (isAllowed(origin)) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-      // if frontend sends credentials, allow them too
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-    } else {
-      // do not set Access-Control-Allow-Origin -> browser will block
-      // or respond without CORS header to indicate not allowed
-    }
+    // 브라우저 직접 접속 등을 위해 * 허용 고려 가능하나, credentials 이슈로 origin 반사가 안전
+    res.setHeader("Access-Control-Allow-Origin", "*");
   }
 
   res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
@@ -133,49 +117,31 @@ const uploadsCorsMiddleware = (req: any, res: any, next: any) => {
 };
 
 app.use("/uploads", uploadsCorsMiddleware, express.static(uploadsPath));
-app.use(express.static(uploadsPath));
+app.use(uploadsCorsMiddleware, express.static(uploadsPath));
 
 // ---- API Routes ----
 app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/chats", chatsRouter);
 app.use("/api/uploads", uploadsRouter);
-// keep legacy mount but forward to uploads router
 app.use("/api/upload", uploadsRouter);
 
-// Multer / upload-related errors -> return JSON instead of crashing
+// Error Handlers
 app.use((err: any, req: any, res: any, next: any) => {
   if (!err) return next();
-  console.error("Global error handler - path:", req.path, "headers:", {
-    origin: req.get("origin"),
-    "content-type": req.get("content-type"),
-  });
+  console.error("Global error handler:", err);
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ ok: false, error: err.message });
   }
-  if (err && typeof err.message === "string" && /Unexpected field/i.test(err.message)) {
-    return res.status(400).json({
-      ok: false,
-      error: "unexpected_field",
-      message:
-        "Use field name 'image' or 'images' (or 'file', 'files') in the multipart/form-data request.",
-    });
-  }
-  console.error("Unhandled error:", err);
   return res.status(500).json({ ok: false, error: "internal_error" });
 });
 
 // ---- Frontend Serve (Production) ----
 if (isProduction) {
   const clientPath = path.join(__dirname, "../../client/dist");
-  console.log("📦 Serving frontend from:", clientPath);
-
   app.use(express.static(clientPath));
-
   app.use((req, res) => {
-    if (req.path.startsWith("/api")) {
-      return res.status(404).json({ error: "API Not Found" });
-    }
+    if (req.path.startsWith("/api")) return res.status(404).json({ error: "API Not Found" });
     res.sendFile(path.join(clientPath, "index.html"));
   });
 }
@@ -196,7 +162,7 @@ initSocketServer(server, socketAllowedOrigins);
       console.log("=================================");
       console.log("🚀 Server started successfully!");
       console.log("Mode:", isProduction ? "Production" : "Development");
-      console.log("Security: Cross-Origin Resource Policy enabled"); // 🔥 적용 확인용 로그
+      console.log("Security: CORS Origin=TRUE (Permissive)");
       console.log("PORT:", port);
       console.log("=================================");
     });
