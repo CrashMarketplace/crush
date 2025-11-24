@@ -33,157 +33,144 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 const isRailway = Boolean(process.env.RAILWAY_PROJECT_ID);
 const isProduction = !isDevelopment || isRailway;
 
-// 🔥 [수정] Vercel 배포 도메인 추가 (CORS 및 소켓 허용)
+// allowedOriginsList kept (not used directly now)
 const allowedOriginsList = [
   "https://bilidamarket.com",
   "https://www.bilidamarket.com",
   "http://localhost:5173",
   "https://crush-git-main-0608s-projects.vercel.app",
   "https://crush-2et7g8ny6-0608s-projects.vercel.app",
-  ...(process.env.ALLOWED_ORIGINS?.split(",").map((x) => x.trim()) || []),
+  ...(process.env.ALLOWED_ORIGINS?.split(",").map(x => x.trim()) || []),
 ];
 
-// ---- CORS ----
-// 🔥 [수정] 배포 환경 통신 문제 해결을 위한 강력한 CORS 설정
-const corsOptions: CorsOptions = {
-  origin: true, // 요청한 Origin을 그대로 반환 (모든 도메인 허용 효과)
-  credentials: true, // 쿠키/인증정보 허용
-};
-
+// CORS (permissive for Vercel previews)
+const corsOptions: CorsOptions = { origin: true, credentials: true };
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-// Helmet (embedder 정책 완화 + cross-origin 이미지 허용)
-app.use(
-  helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    crossOriginEmbedderPolicy: false,
-  })
-);
+// Helmet (allow cross-origin resource embedding)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+}));
 
-// 🔥 [추가] 요청 로그 미들웨어 (서버 도달 여부 확인용)
-app.use((req, res, next) => {
-  console.log(`📡 [${req.method}] ${req.path} | Origin: ${req.headers.origin || 'No Origin'}`);
+// Request log
+app.use((req, _res, next) => {
+  console.log(`📡 [${req.method}] ${req.path} | Origin=${req.headers.origin || "None"}`);
   next();
 });
 
 app.use(morgan("tiny"));
 
-// Health check
-app.get("/health", (_req, res) => {
-  return res.json({ ok: true, uptime: process.uptime() });
-});
+// Health
+app.get("/health", (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
 
-// ---- Rate Limit ----
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 200,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use("/api", apiLimiter);
+// Rate limit
+app.use("/api", rateLimit({ windowMs: 60_000, max: 200, standardHeaders: true, legacyHeaders: false }));
 
-// ---- 정적 파일 서빙 ----
+// ---- Uploads path & directory ensure ----
 const uploadsPath = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.join(__dirname, "../uploads");
 
-// 🔥 [수정] 업로드 폴더 자동 생성 (로그 추가)
-if (!fs.existsSync(uploadsPath)) {
-  try {
+try {
+  if (!fs.existsSync(uploadsPath)) {
     fs.mkdirSync(uploadsPath, { recursive: true });
-    console.log(`✅ Created uploads directory: ${uploadsPath}`);
-  } catch (e) {
-    console.error("❌ Failed to create uploads directory:", e);
+    console.log("✅ Created uploads directory:", uploadsPath);
+  } else {
+    console.log("✅ Uploads directory exists:", uploadsPath);
   }
-} else {
-  console.log(`✅ Uploads directory exists: ${uploadsPath}`);
+  const visibleFiles = fs.readdirSync(uploadsPath).filter(f => !f.startsWith("."));
+  console.log(`🗂 uploads count: ${visibleFiles.length}`);
+  if (visibleFiles.length === 0) {
+    console.warn("⚠️ uploads 폴더 비어있음 (재배포 시 파일 소실). Volume / 외부 스토리지 사용 권장.");
+  }
+} catch (e) {
+  console.warn("⚠️ uploads 폴더 점검 실패:", e);
 }
 
-// CORS 헤더 for uploads
+// ---- Public base & URL normalization helpers ----
+const PUBLIC_BASE = (process.env.PUBLIC_BASE_URL?.replace(/\/+$/, "") ||
+  "https://crush-production.up.railway.app");
+
+function ensureUploadsPrefix(p: string) {
+  let s = p.trim();
+  if (!s.startsWith("/")) s = "/" + s;
+  s = s.replace(/\/{2,}/g, "/");
+  if (!/^\/uploads\//.test(s)) {
+    s = s.replace(/^\/?uploads\/?/, "/uploads/");
+    if (!/^\/uploads\//.test(s)) s = "/uploads" + s;
+  }
+  return s;
+}
+
+function normalizeImageUrl(raw?: string): string {
+  if (!raw) return "";
+  if (/^(data:|blob:)/.test(raw)) return raw;
+  let url = raw.trim();
+  if (!/^https?:\/\//i.test(url)) {
+    url = `${PUBLIC_BASE}${ensureUploadsPrefix(url)}`;
+  }
+  return url
+    .replace("http://localhost:4000", PUBLIC_BASE)
+    .replace("http://127.0.0.1:4000", PUBLIC_BASE);
+}
+
+// ---- Uploads CORS middleware (DEFINE BEFORE USE) ----
 const uploadsCorsMiddleware = (req: any, res: any, next: any) => {
-  // 이미지 로딩 차단 방지
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-  
   const origin = req.get("Origin");
-  // 🔥 [수정] 이미지 요청도 모든 Origin 허용 (이미지 엑박 방지)
   if (origin) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
   } else {
-    // 브라우저 직접 접속 등을 위해 * 허용 고려 가능하나, credentials 이슈로 origin 반사가 안전
     res.setHeader("Access-Control-Allow-Origin", "*");
   }
-
   res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
+  res.setHeader("Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   res.setHeader("Vary", "Origin");
   next();
 };
 
-// 정적 파일 응답 헤더 (이미지 캐시 + MIME 보정)
-app.use("/uploads", (req, res, next) => {
-  res.setHeader("Cache-Control", "public, max-age=604800, immutable");
-  next();
-}, uploadsCorsMiddleware, express.static(uploadsPath));
+// Placeholder for missing files
+const PLACEHOLDER_SVG =
+  'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="#f1f5f9"/><path d="M3 9h18"/><path d="M8 14l3-3 5 5"/><circle cx="8.5" cy="8.5" r="1.5" fill="#e2e8f0"/><text x="50%" y="92%" font-size="2.5" fill="#94a3b8" dominant-baseline="middle" text-anchor="middle">NO IMAGE</text></svg>`
+  );
 
-// 루트에서도 (예: 잘못 저장된 상대경로) 접근 가능
-app.use(uploadsCorsMiddleware, express.static(uploadsPath));
-
-// PUBLIC BASE (절대 URL 구성용)
-const PUBLIC_BASE =
-  process.env.PUBLIC_BASE_URL?.replace(/\/+$/, "") ||
-  "https://crush-production.up.railway.app";
-
-// localhost / 127.0.0.1 치환 함수
-function normalizeImageUrl(raw?: string): string {
-  if (!raw) return "";
-  if (/^data:|^blob:/.test(raw)) return raw;
-  let url = raw.trim();
-
-  // 상대 경로 -> 절대 경로
-  if (!/^https?:\/\//i.test(url)) {
-    url = `${PUBLIC_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+// Missing file handler BEFORE static
+app.use("/uploads/:file", (req, res, next) => {
+  const abs = path.join(uploadsPath, req.params.file);
+  if (!fs.existsSync(abs)) {
+    console.warn("🟡 missing upload file:", req.params.file);
+    res.setHeader("Content-Type", "image/svg+xml");
+    return res.send(decodeURIComponent(PLACEHOLDER_SVG.split(",")[1]));
   }
-
-  // 개발 URL 치환
-  url = url
-    .replace("http://localhost:4000", PUBLIC_BASE)
-    .replace("http://127.0.0.1:4000", PUBLIC_BASE);
-
-  return url;
-}
-
-// ---- 이미지 URL 보정용 응답 래퍼 (제품 목록 / 단일 제품) ----
-app.use((req, res, next) => {
-  // products 관련 응답만 가볍게 가로채 변환
-  if (!req.path.startsWith("/api/products")) return next();
-
-  const origJson = res.json.bind(res);
-  res.json = (body: any) => {
-    try {
-      if (body && body.products && Array.isArray(body.products)) {
-        body.products = body.products.map((p: any) => {
-          if (p?.images && Array.isArray(p.images)) {
-            p.images = p.images.map((img: string) => normalizeImageUrl(img));
-          }
-          return p;
-        });
-      } else if (body && body.product && body.product.images) {
-        body.product.images = body.product.images.map((img: string) =>
-          normalizeImageUrl(img)
-        );
-      }
-    } catch (e) {
-      console.warn("⚠️ product image normalize failed:", e);
-    }
-    return origJson(body);
-  };
   next();
+});
+
+// Single static mount (removed duplicate)
+app.use("/uploads",
+  (req, res, next) => {
+    res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+    next();
+  },
+  uploadsCorsMiddleware,
+  express.static(uploadsPath)
+);
+
+// ---- Debug uploads listing ----
+app.get("/api/debug/uploads", (_req, res) => {
+  try {
+    const list = fs.readdirSync(uploadsPath)
+      .filter(f => !f.startsWith("."))
+      .map(f => ({ file: f, url: normalizeImageUrl(`/uploads/${f}`) }));
+    res.json({ ok: true, count: list.length, files: list });
+  } catch (e: any) {
+    res.json({ ok: false, error: e.message });
+  }
 });
 
 // ---- API Routes ----
@@ -193,9 +180,32 @@ app.use("/api/chats", chatsRouter);
 app.use("/api/uploads", uploadsRouter);
 app.use("/api/upload", uploadsRouter);
 
-// Error Handlers
-app.use((err: any, req: any, res: any, next: any) => {
-  if (!err) return next();
+// ---- Product response image normalization AFTER routes ----
+app.use((req, res, next) => {
+  if (!req.path.startsWith("/api/products")) return next();
+  const orig = res.json.bind(res);
+  res.json = (body: any) => {
+    try {
+      if (Array.isArray(body?.products)) {
+        body.products = body.products.map((p: any) => {
+          if (Array.isArray(p?.images)) {
+            p.images = p.images.map((img: string) => normalizeImageUrl(img));
+          }
+          return p;
+        });
+      } else if (Array.isArray(body?.product?.images)) {
+        body.product.images = body.product.images.map((img: string) => normalizeImageUrl(img));
+      }
+    } catch (e) {
+      console.warn("⚠️ product image normalize failed:", e);
+    }
+    return orig(body);
+  };
+  next();
+});
+
+// Error handler
+app.use((err: any, req: any, res: any, _next: any) => {
   console.error("Global error handler:", err);
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ ok: false, error: err.message });
@@ -203,7 +213,7 @@ app.use((err: any, req: any, res: any, next: any) => {
   return res.status(500).json({ ok: false, error: "internal_error" });
 });
 
-// ---- Frontend Serve (Production) ----
+// Frontend serve
 if (isProduction) {
   const clientPath = path.join(__dirname, "../../client/dist");
   app.use(express.static(clientPath));
@@ -213,26 +223,20 @@ if (isProduction) {
   });
 }
 
-// ---- Start Server ----
+// Socket
 const server = http.createServer(app);
+initSocketServer(server, true);
 
-// 🔥 [수정] Vercel 프론트엔드 접속 허용 (Socket.IO)
-const socketAllowedOrigins = true; 
-
-initSocketServer(server, socketAllowedOrigins);
-
+// Start
 (async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI!);
     console.log("✅ MongoDB connected");
-
     const port = Number(process.env.PORT) || 4000;
     server.listen(port, "0.0.0.0", () => {
       console.log("=================================");
       console.log("🚀 Server started successfully!");
       console.log("Mode:", isProduction ? "Production" : "Development");
-      console.log("Security: CORS Origin=TRUE (Permissive)");
-      console.log("PORT:", port);
       console.log("PUBLIC_BASE:", PUBLIC_BASE);
       console.log("=================================");
     });
