@@ -68,7 +68,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-// 🔥 [수정] Helmet 설정 변경: 타 도메인(Vercel)에서 이미지 로딩 허용
+// 🔥 [수정] Helmet 설정 변경: 타 도메인(Vercel)에서 이미지 로딩 허용 (ERR_BLOCKED_BY_RESPONSE 해결)
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
 app.use(morgan("tiny"));
@@ -188,6 +188,7 @@ initSocketServer(server, socketAllowedOrigins);
       console.log("=================================");
       console.log("🚀 Server started successfully!");
       console.log("Mode:", isProduction ? "Production" : "Development");
+      console.log("Security: Cross-Origin Resource Policy enabled"); // 🔥 적용 확인용 로그
       console.log("PORT:", port);
       console.log("=================================");
     });
