@@ -100,12 +100,20 @@ const uploadsCorsMiddleware = (req: any, res: any, next: any) => {
     return next();
   }
 
+  // 🔥 [수정] 정적 파일 요청에 대해서도 Vercel/Netlify 도메인 허용 로직 추가
+  const isAllowed = (o: string) => {
+    if (allowedOriginsList.includes(o)) return true;
+    if (o.endsWith(".vercel.app")) return true;
+    if (o.endsWith("--darling-torrone-5e5797.netlify.app")) return true;
+    return false;
+  };
+
   if (!isProduction) {
     // during development allow all origins
     res.setHeader("Access-Control-Allow-Origin", "*");
   } else {
-    // in production only allow origins listed in allowedOriginsList
-    if (allowedOriginsList.includes(origin)) {
+    // in production only allow origins listed in allowedOriginsList OR Vercel/Netlify patterns
+    if (isAllowed(origin)) {
       res.setHeader("Access-Control-Allow-Origin", origin);
       // if frontend sends credentials, allow them too
       res.setHeader("Access-Control-Allow-Credentials", "true");
