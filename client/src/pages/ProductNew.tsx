@@ -96,14 +96,19 @@ export default function ProductNew() {
     if (!files.length) return [];
     const fd = new FormData();
     files.forEach((f) => fd.append("files", f));
+    console.log(`📤 Uploading ${files.length} file(s) to ${API_BASE}/api/uploads/images`);
     const res = await fetch(`${API_BASE}/api/uploads/images`, {
       method: "POST",
       credentials: "include",
       body: fd,
     });
     const data = await res.json();
-    if (!res.ok || data.ok === false)
-      throw new Error(data.error || "이미지 업로드 실패");
+    console.log("📥 Server response:", { status: res.status, data });
+    if (!res.ok || data.ok === false) {
+      const errorMsg = `업로드 실패 (${res.status}): ${data.error || data.message || "알 수 없는 오류"}`;
+      console.error(errorMsg, data);
+      throw new Error(errorMsg);
+    }
     return data.urls as string[];
   }
 
