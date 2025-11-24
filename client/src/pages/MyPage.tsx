@@ -5,12 +5,39 @@ import {
   useState,
   type ChangeEvent,
   type FormEvent,
+  type SyntheticEvent,
 } from "react";
 import { useAuth } from "../context/AuthContext";
 import { get } from "../lib/api";
 import type { Product } from "../data/mockProducts";
 import { getSellerId } from "../data/mockProducts";
-import { API_BASE, fixImageUrl } from "../utils/apiConfig";
+import { API_BASE } from "../utils/apiConfig";
+
+// 🔥 비상용 백엔드 주소 (환경변수 누락 대비)
+const BACKUP_API_URL = "https://crush-production.up.railway.app";
+
+// 🔥 안전한 이미지 URL 변환 함수
+function safeFixImageUrl(url?: string) {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("blob:")) return url;
+
+  // 1. localhost -> Railway URL 변환
+  let fixed = url;
+  const targetBase = API_BASE || BACKUP_API_URL;
+
+  if (fixed.includes("localhost:4000") || fixed.includes("127.0.0.1:4000")) {
+    fixed = fixed
+      .replace("http://localhost:4000", targetBase)
+      .replace("http://127.0.0.1:4000", targetBase);
+  }
+
+  // 2. 상대 경로 -> 절대 경로 변환
+  if (!fixed.startsWith("http")) {
+    fixed = `${targetBase}${fixed.startsWith("/") ? "" : "/"}${fixed}`;
+  }
+  
+  return fixed;
+}
 
 type TabKey = "all" | "selling" | "sold";
 
@@ -64,11 +91,16 @@ export default function MyPage() {
   const locationText = locationValue.trim() || "지역 정보 없음";
   const avatarUrl = user?.avatarUrl;
   
-  // [수정] fixImageUrl 사용하여 localhost 문제 해결
-  const displayAvatarUrl = avatarUrl ? fixImageUrl(avatarUrl) : null;
+  // [수정] safeFixImageUrl 사용
+  const displayAvatarUrl = avatarUrl ? safeFixImageUrl(avatarUrl) : null;
 
   const avatarInitial = displayName[0]?.toUpperCase() || "U";
   const bioText = user?.bio?.trim();
+
+  // 프로필 이미지 로드 실패 시 처리
+  const handleAvatarError = (e: SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.style.display = "none"; // 이미지 숨기고 배경(이니셜) 보여주기
+  };
 
   if (loading) return null;
 
@@ -84,6 +116,7 @@ export default function MyPage() {
                 alt={`${displayName}님의 프로필 이미지`}
                 className="object-cover w-full h-full"
                 loading="lazy"
+                onError={handleAvatarError}
               />
             ) : (
               avatarInitial
@@ -224,16 +257,16 @@ function MyProductCard({
   // 기존 ProductCard를 그대로 쓰면 링크 이동이 포함되어 드롭다운/액션 배치가 어려워
   // 마이페이지 전용으로 최소한의 정보만 노출
 
-  // 기본 플레이스홀더: 인라인 SVG(data URI) — 빌드 시 public에 placeholder.png가 없어도 404 방지
+  // 기본 플레이스홀더: 인라인 SVG(data URI)
   const DEFAULT_PLACEHOLDER =
     'data:image/svg+xml;utf8,' +
     encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2" ry="2" fill="#f8fafc"/><path d="M3 7h18"/><path d="M8 11l2 2 3-3 5 5"/><circle cx="8.5" cy="8.5" r="1.5" fill="#e2e8f0"/><text x="50%" y="92%" font-size="2.5" fill="#94a3b8" text-anchor="middle" font-family="Arial, Helvetica, sans-serif">이미지 없음</text></svg>`
     );
 
-  // [수정] fixImageUrl 사용하여 localhost 문제 해결 및 기본값 처리
+  // [수정] safeFixImageUrl 사용
   const imageSrc = item.images?.[0]
-    ? fixImageUrl(item.images[0])
+    ? safeFixImageUrl(item.images[0])
     : DEFAULT_PLACEHOLDER;
 
   const dateText = item.createdAt
@@ -246,7 +279,7 @@ function MyProductCard({
 
   const requestDelete = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/products/${item._id}`, {
+      const res = await fetch(`${API_BASE || BACKUP_API_URL}/api/products/${item._id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -266,7 +299,7 @@ function MyProductCard({
     if (statusBusy) return;
     setStatusBusy(true);
     try {
-      const res = await fetch(`${API_BASE}/api/products/${item._id}/status`, {
+      const res = await fetch(`${API_BASE || BACKUP_API_URL}/api/products/${item._id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -292,6 +325,9 @@ function MyProductCard({
           alt={item.title}
           className="object-cover w-full h-full"
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.src = DEFAULT_PLACEHOLDER;
+          }}
         />
         {item.status !== "selling" ? (
           <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-white bg-black/50">
@@ -374,9 +410,9 @@ function ProfilePhotoEditor({
   onClose: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
-  // [수정] 편집기 초기값에도 fixImageUrl 적용하여 localhost 에러 방지
+  // [수정] safeFixImageUrl 사용
   const [preview, setPreview] = useState<string>(
-    currentAvatar ? fixImageUrl(currentAvatar) : ""
+    currentAvatar ? safeFixImageUrl(currentAvatar) : ""
   );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -393,8 +429,8 @@ function ProfilePhotoEditor({
     const next = e.target.files?.[0];
     if (!next) {
       setFile(null);
-      // [수정] 파일 선택 취소 시에도 보정된 주소로 복귀
-      setPreview(currentAvatar ? fixImageUrl(currentAvatar) : "");
+      // [수정] safeFixImageUrl 사용
+      setPreview(currentAvatar ? safeFixImageUrl(currentAvatar) : "");
       return;
     }
     if (next.size > 5 * 1024 * 1024) {
@@ -418,7 +454,7 @@ function ProfilePhotoEditor({
     try {
       const formData = new FormData();
       formData.append("files", file);
-      const uploadRes = await fetch(`${API_BASE}/api/uploads/images`, {
+      const uploadRes = await fetch(`${API_BASE || BACKUP_API_URL}/api/uploads/images`, {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -432,7 +468,7 @@ function ProfilePhotoEditor({
       const url = uploadJson.urls?.[0];
       if (!url) throw new Error("업로드된 이미지 주소를 찾을 수 없어요.");
 
-      const res = await fetch(`${API_BASE}/api/auth/profile/avatar`, {
+      const res = await fetch(`${API_BASE || BACKUP_API_URL}/api/auth/profile/avatar`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -478,6 +514,9 @@ function ProfilePhotoEditor({
               src={preview}
               alt="새 프로필 미리보기"
               className="object-cover w-full h-full"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
             />
           ) : (
             <span className="text-sm text-gray-500">미리보기</span>
@@ -558,7 +597,7 @@ function ProfileInfoEditor({
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/profile`, {
+      const res = await fetch(`${API_BASE || BACKUP_API_URL}/api/auth/profile`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
