@@ -374,7 +374,10 @@ function ProfilePhotoEditor({
   onClose: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string>(currentAvatar || "");
+  // [수정] 편집기 초기값에도 fixImageUrl 적용하여 localhost 에러 방지
+  const [preview, setPreview] = useState<string>(
+    currentAvatar ? fixImageUrl(currentAvatar) : ""
+  );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -390,7 +393,8 @@ function ProfilePhotoEditor({
     const next = e.target.files?.[0];
     if (!next) {
       setFile(null);
-      setPreview(currentAvatar || "");
+      // [수정] 파일 선택 취소 시에도 보정된 주소로 복귀
+      setPreview(currentAvatar ? fixImageUrl(currentAvatar) : "");
       return;
     }
     if (next.size > 5 * 1024 * 1024) {
