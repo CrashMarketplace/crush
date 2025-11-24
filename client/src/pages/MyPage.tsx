@@ -94,6 +94,17 @@ export default function MyPage() {
   // [수정] safeFixImageUrl 사용
   const displayAvatarUrl = avatarUrl ? safeFixImageUrl(avatarUrl) : null;
 
+  // 🔥 [추가] 디버깅용 로그: 브라우저 콘솔(F12)에서 이미지 주소 변환 결과 확인 가능
+  useEffect(() => {
+    if (items.length > 0) {
+      console.log("🔍 마이페이지 상품 이미지 진단:", items.map(i => ({
+        상품명: i.title,
+        원본주소: i.images?.[0] || "없음",
+        변환된주소: i.images?.[0] ? safeFixImageUrl(i.images[0]) : "없음"
+      })));
+    }
+  }, [items]);
+
   const avatarInitial = displayName[0]?.toUpperCase() || "U";
   const bioText = user?.bio?.trim();
 
