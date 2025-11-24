@@ -63,6 +63,14 @@ export default function MyPage() {
   const locationValue = user?.location ?? "";
   const locationText = locationValue.trim() || "지역 정보 없음";
   const avatarUrl = user?.avatarUrl;
+  
+  // [수정] 이미지 URL 처리: http로 시작하지 않으면 API_BASE를 붙임
+  const displayAvatarUrl = avatarUrl
+    ? avatarUrl.startsWith("http")
+      ? avatarUrl
+      : `${API_BASE}${avatarUrl}`
+    : null;
+
   const avatarInitial = displayName[0]?.toUpperCase() || "U";
   const bioText = user?.bio?.trim();
 
@@ -73,10 +81,10 @@ export default function MyPage() {
       {/* 프로필 헤더 */}
       <section className="flex flex-col gap-6 p-6 bg-white border rounded-2xl md:flex-row md:items-center">
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center text-2xl font-semibold text-gray-500">
-            {avatarUrl ? (
+          <div className="flex items-center justify-center w-20 h-20 overflow-hidden text-2xl font-semibold text-gray-500 bg-gray-100 border border-gray-200 rounded-full">
+            {displayAvatarUrl ? (
               <img
-                src={avatarUrl}
+                src={displayAvatarUrl}
                 alt={`${displayName}님의 프로필 이미지`}
                 className="object-cover w-full h-full"
                 loading="lazy"
@@ -219,7 +227,22 @@ function MyProductCard({
   // 카드 재사용: 삭제 권한/버튼 포함
   // 기존 ProductCard를 그대로 쓰면 링크 이동이 포함되어 드롭다운/액션 배치가 어려워
   // 마이페이지 전용으로 최소한의 정보만 노출
-  const imageSrc = item.images?.[0] || "/placeholder.png";
+
+  // 기본 플레이스홀더: 인라인 SVG(data URI) — 빌드 시 public에 placeholder.png가 없어도 404 방지
+  const DEFAULT_PLACEHOLDER =
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2" ry="2" fill="#f8fafc"/><path d="M3 7h18"/><path d="M8 11l2 2 3-3 5 5"/><circle cx="8.5" cy="8.5" r="1.5" fill="#e2e8f0"/><text x="50%" y="92%" font-size="2.5" fill="#94a3b8" text-anchor="middle" font-family="Arial, Helvetica, sans-serif">이미지 없음</text></svg>`
+    );
+
+  // [수정] 상품 이미지 URL 처리
+  const rawImage = item.images?.[0];
+  const imageSrc = rawImage
+    ? rawImage.startsWith("http")
+      ? rawImage
+      : `${API_BASE}${rawImage}`
+    : DEFAULT_PLACEHOLDER;
+
   const dateText = item.createdAt
     ? new Date(item.createdAt).toLocaleDateString()
     : "";
@@ -269,7 +292,7 @@ function MyProductCard({
   };
 
   return (
-    <div className="relative overflow-hidden border rounded-2xl bg-white">
+    <div className="relative overflow-hidden bg-white border rounded-2xl">
       <div className="relative bg-gray-100 aspect-square">
         <img
           src={imageSrc}
@@ -298,7 +321,7 @@ function MyProductCard({
       <div className="absolute top-2 right-2">
         {!confirmOpen ? (
           <button
-            className="px-2 py-1 text-xs rounded bg-white/90 border hover:bg-white"
+            className="px-2 py-1 text-xs border rounded bg-white/90 hover:bg-white"
             onClick={() => setConfirmOpen(true)}
           >
             삭제
@@ -306,13 +329,13 @@ function MyProductCard({
         ) : (
           <div className="flex gap-1">
             <button
-              className="px-2 py-1 text-xs rounded bg-white border hover:bg-gray-50"
+              className="px-2 py-1 text-xs bg-white border rounded hover:bg-gray-50"
               onClick={() => setConfirmOpen(false)}
             >
               취소
             </button>
             <button
-              className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700"
+              className="px-2 py-1 text-xs text-white bg-red-600 rounded hover:bg-red-700"
               onClick={requestDelete}
             >
               삭제
@@ -433,13 +456,13 @@ function ProfilePhotoEditor({
   };
 
   return (
-    <div className="mt-4 p-4 border rounded-2xl bg-white">
+    <div className="p-4 mt-4 bg-white border rounded-2xl">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-gray-900 text-sm">
+          <h2 className="text-sm font-semibold text-gray-900">
             프로필 사진 변경
           </h2>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="mt-1 text-xs text-gray-500">
             정사각형 이미지, 최대 5MB (JPEG/PNG/WebP)
           </p>
         </div>
@@ -451,8 +474,8 @@ function ProfilePhotoEditor({
           닫기
         </button>
       </div>
-      <form onSubmit={submit} className="mt-4 flex flex-col gap-4 sm:flex-row">
-        <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border">
+      <form onSubmit={submit} className="flex flex-col gap-4 mt-4 sm:flex-row">
+        <div className="flex items-center justify-center w-32 h-32 overflow-hidden bg-gray-100 border rounded-full">
           {preview ? (
             <img
               src={preview}
@@ -529,27 +552,16 @@ function ProfileInfoEditor({
       bio: form.bio.trim(),
     };
 
-    if (payload.displayName.length < 2) {
-      setError("닉네임은 2글자 이상이어야 합니다.");
-      return;
-    }
-    if (payload.displayName.length > 20) {
-      setError("닉네임은 20자를 넘길 수 없습니다.");
-      return;
-    }
-    if (payload.location.length > 40) {
-      setError("지역 정보는 40자를 넘길 수 없습니다.");
-      return;
-    }
-    if (payload.bio.length > 200) {
-      setError("소개는 200자를 넘길 수 없습니다.");
+    if (!payload.displayName) {
+      setError("닉네임을 입력해주세요.");
       return;
     }
 
     setBusy(true);
     setError(null);
+
     try {
-      const res = await fetch(`${API_BASE}/api/auth/profile/info`, {
+      const res = await fetch(`${API_BASE}/api/auth/profile`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -557,27 +569,20 @@ function ProfileInfoEditor({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data?.ok === false) {
-        throw new Error(
-          data?.error || `프로필 갱신 실패 (HTTP ${res.status})`
-        );
+        throw new Error(data?.error || `정보 수정 실패 (HTTP ${res.status})`);
       }
       await onUpdated();
     } catch (err: any) {
-      setError(err?.message || "사용자 정보를 변경할 수 없어요.");
+      setError(err?.message || "정보 수정 중 오류가 발생했습니다.");
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="mt-4 p-4 border rounded-2xl bg-white space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-semibold text-sm">사용자 정보 변경</h2>
-          <p className="text-xs text-gray-500 mt-1">
-            닉네임·지역·소개는 사기 방지를 위해 최소 정보만 변경할 수 있어요.
-          </p>
-        </div>
+    <div className="p-4 mt-4 bg-white border rounded-2xl">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-gray-900">사용자 정보 변경</h2>
         <button
           onClick={onClose}
           type="button"
@@ -588,62 +593,56 @@ function ProfileInfoEditor({
       </div>
       <form onSubmit={submit} className="space-y-4">
         <div>
-          <label className="text-xs font-semibold text-gray-600">
+          <label className="block mb-1 text-xs font-medium text-gray-700">
             닉네임
           </label>
           <input
             type="text"
             value={form.displayName}
             onChange={onChange("displayName")}
-            maxLength={20}
-            className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
-            placeholder="닉네임 (2~20자)"
+            className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+            placeholder="닉네임"
           />
         </div>
         <div>
-          <label className="text-xs font-semibold text-gray-600">
-            활동 지역 (선택)
+          <label className="block mb-1 text-xs font-medium text-gray-700">
+            지역
           </label>
           <input
             type="text"
             value={form.location}
             onChange={onChange("location")}
-            maxLength={40}
-            className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
-            placeholder="예) 서울 송파구"
+            className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10"
+            placeholder="예: 서울시 강남구"
           />
         </div>
         <div>
-          <label className="text-xs font-semibold text-gray-600">
-            소개 (선택)
+          <label className="block mb-1 text-xs font-medium text-gray-700">
+            소개
           </label>
           <textarea
             value={form.bio}
             onChange={onChange("bio")}
-            maxLength={200}
+            className="w-full px-3 py-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-black/10"
             rows={3}
-            className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
-            placeholder="최대 200자까지 입력할 수 있어요."
+            placeholder="자기소개를 입력하세요"
           />
-          <div className="text-right text-[11px] text-gray-400">
-            {form.bio.length}/200
-          </div>
         </div>
         {error ? <p className="text-xs text-red-500">{error}</p> : null}
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={busy}
-            className="px-4 py-2 text-sm font-semibold text-white bg-[#001C6D] rounded-lg hover:bg-[#031350] disabled:opacity-60"
-          >
-            {busy ? "저장 중..." : "저장하기"}
-          </button>
+        <div className="flex justify-end gap-2 pt-2">
           <button
             type="button"
             onClick={onClose}
             className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50"
           >
             취소
+          </button>
+          <button
+            type="submit"
+            disabled={busy}
+            className="px-4 py-2 text-sm font-semibold text-white bg-black rounded-lg hover:opacity-90 disabled:opacity-60"
+          >
+            {busy ? "저장 중..." : "저장하기"}
           </button>
         </div>
       </form>
