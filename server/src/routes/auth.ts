@@ -173,6 +173,14 @@ router.post("/signup", limiter, async (req, res) => {
       displayName: userId,
     });
 
+    // 회원가입 완료 후 자동 로그인 (쿠키 설정)
+    const token = signUser({
+      id: String(user._id),
+      userId: user.userId,
+      email: user.email,
+    });
+    setAuthCookie(res, token);
+
     return res.json({ ok: true, user: toPublicUser(user) });
   } catch (e: any) {
     return res.json({ ok: false, error: e?.message });
