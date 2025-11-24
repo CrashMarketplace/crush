@@ -10,7 +10,7 @@ import { useAuth } from "../context/AuthContext";
 import { get } from "../lib/api";
 import type { Product } from "../data/mockProducts";
 import { getSellerId } from "../data/mockProducts";
-import { API_BASE } from "../utils/apiConfig";
+import { API_BASE, fixImageUrl } from "../utils/apiConfig";
 
 type TabKey = "all" | "selling" | "sold";
 
@@ -64,12 +64,8 @@ export default function MyPage() {
   const locationText = locationValue.trim() || "지역 정보 없음";
   const avatarUrl = user?.avatarUrl;
   
-  // [수정] 이미지 URL 처리: http로 시작하지 않으면 API_BASE를 붙임
-  const displayAvatarUrl = avatarUrl
-    ? avatarUrl.startsWith("http")
-      ? avatarUrl
-      : `${API_BASE}${avatarUrl}`
-    : null;
+  // [수정] fixImageUrl 사용하여 localhost 문제 해결
+  const displayAvatarUrl = avatarUrl ? fixImageUrl(avatarUrl) : null;
 
   const avatarInitial = displayName[0]?.toUpperCase() || "U";
   const bioText = user?.bio?.trim();
@@ -235,12 +231,9 @@ function MyProductCard({
       `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2" ry="2" fill="#f8fafc"/><path d="M3 7h18"/><path d="M8 11l2 2 3-3 5 5"/><circle cx="8.5" cy="8.5" r="1.5" fill="#e2e8f0"/><text x="50%" y="92%" font-size="2.5" fill="#94a3b8" text-anchor="middle" font-family="Arial, Helvetica, sans-serif">이미지 없음</text></svg>`
     );
 
-  // [수정] 상품 이미지 URL 처리
-  const rawImage = item.images?.[0];
-  const imageSrc = rawImage
-    ? rawImage.startsWith("http")
-      ? rawImage
-      : `${API_BASE}${rawImage}`
+  // [수정] fixImageUrl 사용하여 localhost 문제 해결 및 기본값 처리
+  const imageSrc = item.images?.[0]
+    ? fixImageUrl(item.images[0])
     : DEFAULT_PLACEHOLDER;
 
   const dateText = item.createdAt
