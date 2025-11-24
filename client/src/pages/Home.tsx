@@ -70,6 +70,16 @@ export default function Home() {
     };
   }, []);
 
+  // 🔥 [추가] 디버깅용 로그: 새 상품 등록 후 콘솔(F12)에서 이미지 주소가 https://...로 잘 나오는지 확인하세요.
+  useEffect(() => {
+    if (items.length > 0) {
+      console.log("🔍 홈 화면 상품 데이터(상위 3개):", items.slice(0, 3).map(p => ({
+        title: p.title,
+        image: p.images?.[0]
+      })));
+    }
+  }, [items]);
+
   // 간단한 섹션 분리: 앞쪽 12개를 추천, 다음 12개를 인기 섹션에서 사용
   const recommended = items.slice(0, 12);
   const popular = items.slice(12, 24);
