@@ -57,10 +57,13 @@ const uploadFields = [
 router.post("/images", (req, res) => {
   upload.fields(uploadFields)(req as any, res as any, async (err: any) => {
     // Log headers & fields for debugging
+    console.log("=== Upload Request Start ===");
+    console.log("Storage mode:", isCloudStorageEnabled() ? "R2 Cloud" : "Local Disk");
     console.log("Upload attempt:", req.method, req.path);
     console.log("Headers:", {
       origin: req.get("origin"),
       "content-type": req.get("content-type"),
+      cookie: req.get("cookie") ? "present" : "missing",
     });
 
     if (err) {
@@ -99,14 +102,18 @@ router.post("/images", (req, res) => {
     }
 
     if (!files || files.length === 0) {
+      console.error("❌ No files received. Fields:", Object.keys(filesByField || {}));
       return res.status(400).json({ ok: false, error: "no_file_uploaded" });
     }
 
+    console.log(`📦 Processing ${files.length} file(s)`);
     const uploadedUrls: string[] = [];
     const failedNames: string[] = [];
     for (const file of files) {
+      console.log(`  File: ${file.originalname}, size: ${file.size}, type: ${file.mimetype}`);
       const typeOk = /^image\/(jpeg|png|gif|webp|bmp)$/.test(file.mimetype || "");
       if (!typeOk) {
+        console.warn(`  ❌ Invalid type: ${file.mimetype}`);
         failedNames.push(file.originalname);
         continue;
       }
@@ -114,21 +121,33 @@ router.post("/images", (req, res) => {
       try {
         if (isCloudStorageEnabled()) {
           // memory storage -> file.buffer available
+          console.log(`  ☁️  Uploading to R2...`);
           const { url } = await uploadBufferToStorage(file.buffer, file.mimetype, file.originalname);
+          console.log(`  ✅ R2 success: ${url}`);
           uploadedUrls.push(url);
         } else {
           // disk storage already saved -> build local URL
-          uploadedUrls.push(`/uploads/${file.filename}`);
+          if (!file.filename) {
+            throw new Error("Disk storage failed: no filename");
+          }
+          const localUrl = `/uploads/${file.filename}`;
+          console.log(`  💾 Local disk: ${localUrl}`);
+          uploadedUrls.push(localUrl);
         }
       } catch (e: any) {
-        console.error("single file upload failed", e);
+        console.error(`  ❌ Upload failed: ${e.message}`);
         failedNames.push(file.originalname);
       }
     }
 
     if (uploadedUrls.length === 0) {
+      console.error("❌ All uploads failed. Failed files:", failedNames);
       return res.status(400).json({ ok: false, error: "invalid_or_failed", failed: failedNames });
     }
+    
+    console.log(`✅ Upload complete: ${uploadedUrls.length} succeeded, ${failedNames.length} failed`);
+    console.log("=== Upload Request End ===");
+    
     if (uploadedUrls.length === 1) {
       return res.json({ ok: true, url: uploadedUrls[0], urls: uploadedUrls });
     }
