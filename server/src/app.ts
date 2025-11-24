@@ -47,6 +47,12 @@ const corsOptions: CorsOptions = {
     if (!origin) return callback(null, true);
 
     if (allowedOriginsList.includes(origin)) return callback(null, true);
+
+    // 🔥 Netlify Deploy Preview 허용 (예: https://65a...--darling-torrone-5e5797.netlify.app)
+    if (origin.endsWith("--darling-torrone-5e5797.netlify.app")) {
+      return callback(null, true);
+    }
+
     console.log("❌ BLOCKED ORIGIN:", origin);
     return callback(new Error("Not allowed by CORS"));
   },

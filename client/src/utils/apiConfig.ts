@@ -25,6 +25,29 @@ export function getApiBaseUrl(): string {
 export const API_BASE = getApiBaseUrl();
 
 /**
+ * 이미지 URL 보정
+ * 1. DB에 'http://localhost:4000/...'으로 저장된 레거시 데이터를 현재 API_BASE로 교체
+ * 2. 상대 경로인 경우 API_BASE 추가
+ */
+export function fixImageUrl(url?: string): string {
+  if (!url) return "";
+
+  // data URI나 blob은 그대로 반환
+  if (url.startsWith("data:") || url.startsWith("blob:")) return url;
+
+  // 🔥 DB에 저장된 localhost 주소를 현재 API 주소로 변경 (배포 환경 호환)
+  if (url.includes("localhost:4000") || url.includes("127.0.0.1:4000")) {
+    return url
+      .replace("http://localhost:4000", API_BASE)
+      .replace("http://127.0.0.1:4000", API_BASE);
+  }
+
+  // 절대 경로(http)는 그대로, 상대 경로는 API_BASE 붙임
+  if (url.startsWith("http")) return url;
+  return `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+/**
  * API URL 생성 (/api prefix 자동 추가)
  */
 export function buildApiUrl(path: string): string {
