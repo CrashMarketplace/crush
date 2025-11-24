@@ -33,19 +33,20 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 const isRailway = Boolean(process.env.RAILWAY_PROJECT_ID);
 const isProduction = !isDevelopment || isRailway;
 
+// 🔥 [수정] Vercel 및 로컬 개발 환경 허용 목록 (불필요한 도메인 제거)
 const allowedOriginsList = [
-  "https://darling-torrone-5e5797.netlify.app",
-  "https://bilidamarket.com",
-  "https://www.bilidamarket.com",
   "http://localhost:5173",
+  "https://crush-git-main-0608s-projects.vercel.app",
+  "https://crush-2et7g8ny6-0608s-projects.vercel.app",
+  // Vercel 도메인은 아래 corsOptions의 origin: true 설정으로 자동 허용됩니다.
   ...(process.env.ALLOWED_ORIGINS?.split(",").map((x) => x.trim()) || []),
 ];
 
 // ---- CORS ----
 // 🔥 [수정] 배포 환경 통신 문제 해결을 위한 강력한 CORS 설정
 const corsOptions: CorsOptions = {
-  origin: true, // 요청한 Origin을 그대로 반환 (모든 도메인 허용 효과)
-  credentials: true, // 쿠키/인증정보 허용
+  origin: true, // Vercel의 모든 Preview/Production 도메인 접속 허용
+  credentials: true, // 로그인 쿠키 허용
 };
 
 app.use(cors(corsOptions));
@@ -148,7 +149,9 @@ if (isProduction) {
 
 // ---- Start Server ----
 const server = http.createServer(app);
-const socketAllowedOrigins = !isProduction ? true : allowedOriginsList;
+
+// 🔥 [수정] Vercel 프론트엔드 접속 허용 (Socket.IO)
+const socketAllowedOrigins = true; 
 
 initSocketServer(server, socketAllowedOrigins);
 
