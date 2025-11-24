@@ -3,7 +3,33 @@ import { useEffect, useState } from "react";
 import Banner from "../components/Banner";
 import ProductSection from "../components/ProductSection";
 import type { Product } from "../data/mockProducts";
-import { buildApiUrl } from "../utils/apiConfig";
+import { buildApiUrl, API_BASE } from "../utils/apiConfig";
+
+// 🔥 비상용 백엔드 주소 (환경변수 누락 대비)
+const BACKUP_API_URL = "https://crush-production.up.railway.app";
+
+// 🔥 안전한 이미지 URL 변환 함수 (MyPage와 동일 로직)
+function safeFixImageUrl(url?: string) {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("blob:")) return url;
+
+  // 1. localhost -> Railway URL 변환
+  let fixed = url;
+  const targetBase = API_BASE || BACKUP_API_URL;
+
+  if (fixed.includes("localhost:4000") || fixed.includes("127.0.0.1:4000")) {
+    fixed = fixed
+      .replace("http://localhost:4000", targetBase)
+      .replace("http://127.0.0.1:4000", targetBase);
+  }
+
+  // 2. 상대 경로 -> 절대 경로 변환
+  if (!fixed.startsWith("http")) {
+    fixed = `${targetBase}${fixed.startsWith("/") ? "" : "/"}${fixed}`;
+  }
+
+  return fixed;
+}
 
 export default function Home() {
   const [items, setItems] = useState<Product[]>([]);
@@ -23,7 +49,15 @@ export default function Home() {
         if (!res.ok || data.ok === false)
           throw new Error(data.error || "불러오기 실패");
         if (!alive) return;
-        setItems(data.products as Product[]);
+
+        // 🔥 이미지 URL 보정 적용
+        const products = data.products as Product[];
+        const fixedProducts = products.map((p) => ({
+          ...p,
+          images: p.images?.map((img) => safeFixImageUrl(img)),
+        }));
+
+        setItems(fixedProducts);
       } catch (e: any) {
         if (!alive) return;
         setErr(e.message || "에러가 발생했습니다.");
