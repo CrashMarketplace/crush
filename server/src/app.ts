@@ -67,7 +67,7 @@ app.use(morgan("tiny"));
 app.get("/health", (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
 
 // Rate limit
-app.use("/api", rateLimit({ windowMs: 60_000, max: 200, standardHeaders: true, legacyHeaders: false }));
+app.use("/api", rateLimit({ windowMs: 60000, max: 200, standardHeaders: true, legacyHeaders: false }));
 
 // ---- Uploads path & directory ensure ----
 const uploadsPath = process.env.UPLOADS_DIR
@@ -173,6 +173,17 @@ app.get("/api/debug/uploads", (_req, res) => {
   }
 });
 
+// 디버그: ENV / 상태 확인
+app.get("/api/debug/env", (_req, res) => {
+  res.json({
+    ok: true,
+    NODE_ENV: process.env.NODE_ENV,
+    MONGO_URI: Boolean(process.env.MONGO_URI),
+    PUBLIC_BASE,
+    uploadsPath,
+  });
+});
+
 // ---- API Routes ----
 app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
@@ -230,7 +241,11 @@ initSocketServer(server, true);
 // Start
 (async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI!);
+    if (!process.env.MONGO_URI) {
+      console.error("❌ Missing MONGO_URI. Abort start.");
+      process.exit(1);
+    }
+    await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ MongoDB connected");
     const port = Number(process.env.PORT) || 4000;
     server.listen(port, "0.0.0.0", () => {
@@ -242,6 +257,8 @@ initSocketServer(server, true);
     });
   } catch (err) {
     console.error("❌ Server startup failed:", err);
+    // 실패 시 프로세스 종료 -> Railway 재시도
+    process.exit(1);
   }
 })();
 
