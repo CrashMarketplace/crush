@@ -33,20 +33,21 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 const isRailway = Boolean(process.env.RAILWAY_PROJECT_ID);
 const isProduction = !isDevelopment || isRailway;
 
-// 🔥 [수정] Vercel 및 로컬 개발 환경 허용 목록 (불필요한 도메인 제거)
+// 🔥 [수정] Vercel 배포 도메인 추가 (CORS 및 소켓 허용)
 const allowedOriginsList = [
+  "https://bilidamarket.com",
+  "https://www.bilidamarket.com",
   "http://localhost:5173",
   "https://crush-git-main-0608s-projects.vercel.app",
   "https://crush-2et7g8ny6-0608s-projects.vercel.app",
-  // Vercel 도메인은 아래 corsOptions의 origin: true 설정으로 자동 허용됩니다.
   ...(process.env.ALLOWED_ORIGINS?.split(",").map((x) => x.trim()) || []),
 ];
 
 // ---- CORS ----
 // 🔥 [수정] 배포 환경 통신 문제 해결을 위한 강력한 CORS 설정
 const corsOptions: CorsOptions = {
-  origin: true, // Vercel의 모든 Preview/Production 도메인 접속 허용
-  credentials: true, // 로그인 쿠키 허용
+  origin: true, // 요청한 Origin을 그대로 반환 (모든 도메인 허용 효과)
+  credentials: true, // 쿠키/인증정보 허용
 };
 
 app.use(cors(corsOptions));
@@ -83,7 +84,7 @@ const uploadsPath = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.join(__dirname, "../uploads");
 
-// 업로드 폴더 자동 생성
+// 🔥 [수정] 업로드 폴더 자동 생성 (로그 추가)
 if (!fs.existsSync(uploadsPath)) {
   try {
     fs.mkdirSync(uploadsPath, { recursive: true });
@@ -91,6 +92,8 @@ if (!fs.existsSync(uploadsPath)) {
   } catch (e) {
     console.error("❌ Failed to create uploads directory:", e);
   }
+} else {
+  console.log(`✅ Uploads directory exists: ${uploadsPath}`);
 }
 
 // CORS 헤더 for uploads

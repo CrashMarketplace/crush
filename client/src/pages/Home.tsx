@@ -15,7 +15,10 @@ function safeFixImageUrl(url?: string) {
 
   // 1. localhost -> Railway URL 변환
   let fixed = url;
-  const targetBase = API_BASE || BACKUP_API_URL;
+  
+  // 🔥 [수정] API_BASE가 로컬호스트면 강제로 백업(Railway) 주소 사용 (Vercel에서 엑박 방지)
+  const isLocalApi = API_BASE && (API_BASE.includes("localhost") || API_BASE.includes("127.0.0.1"));
+  const targetBase = (!API_BASE || isLocalApi) ? BACKUP_API_URL : API_BASE;
 
   if (fixed.includes("localhost:4000") || fixed.includes("127.0.0.1:4000")) {
     fixed = fixed
