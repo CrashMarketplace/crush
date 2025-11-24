@@ -54,8 +54,13 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-// 🔥 [수정] Helmet 설정: 타 도메인 이미지 로딩 허용
-app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+// Helmet (embedder 정책 완화 + cross-origin 이미지 허용)
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 // 🔥 [추가] 요청 로그 미들웨어 (서버 도달 여부 확인용)
 app.use((req, res, next) => {
@@ -120,8 +125,66 @@ const uploadsCorsMiddleware = (req: any, res: any, next: any) => {
   next();
 };
 
-app.use("/uploads", uploadsCorsMiddleware, express.static(uploadsPath));
+// 정적 파일 응답 헤더 (이미지 캐시 + MIME 보정)
+app.use("/uploads", (req, res, next) => {
+  res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+  next();
+}, uploadsCorsMiddleware, express.static(uploadsPath));
+
+// 루트에서도 (예: 잘못 저장된 상대경로) 접근 가능
 app.use(uploadsCorsMiddleware, express.static(uploadsPath));
+
+// PUBLIC BASE (절대 URL 구성용)
+const PUBLIC_BASE =
+  process.env.PUBLIC_BASE_URL?.replace(/\/+$/, "") ||
+  "https://crush-production.up.railway.app";
+
+// localhost / 127.0.0.1 치환 함수
+function normalizeImageUrl(raw?: string): string {
+  if (!raw) return "";
+  if (/^data:|^blob:/.test(raw)) return raw;
+  let url = raw.trim();
+
+  // 상대 경로 -> 절대 경로
+  if (!/^https?:\/\//i.test(url)) {
+    url = `${PUBLIC_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+  }
+
+  // 개발 URL 치환
+  url = url
+    .replace("http://localhost:4000", PUBLIC_BASE)
+    .replace("http://127.0.0.1:4000", PUBLIC_BASE);
+
+  return url;
+}
+
+// ---- 이미지 URL 보정용 응답 래퍼 (제품 목록 / 단일 제품) ----
+app.use((req, res, next) => {
+  // products 관련 응답만 가볍게 가로채 변환
+  if (!req.path.startsWith("/api/products")) return next();
+
+  const origJson = res.json.bind(res);
+  res.json = (body: any) => {
+    try {
+      if (body && body.products && Array.isArray(body.products)) {
+        body.products = body.products.map((p: any) => {
+          if (p?.images && Array.isArray(p.images)) {
+            p.images = p.images.map((img: string) => normalizeImageUrl(img));
+          }
+          return p;
+        });
+      } else if (body && body.product && body.product.images) {
+        body.product.images = body.product.images.map((img: string) =>
+          normalizeImageUrl(img)
+        );
+      }
+    } catch (e) {
+      console.warn("⚠️ product image normalize failed:", e);
+    }
+    return origJson(body);
+  };
+  next();
+});
 
 // ---- API Routes ----
 app.use("/api/auth", authRouter);
@@ -170,6 +233,7 @@ initSocketServer(server, socketAllowedOrigins);
       console.log("Mode:", isProduction ? "Production" : "Development");
       console.log("Security: CORS Origin=TRUE (Permissive)");
       console.log("PORT:", port);
+      console.log("PUBLIC_BASE:", PUBLIC_BASE);
       console.log("=================================");
     });
   } catch (err) {
