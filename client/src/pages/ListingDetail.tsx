@@ -491,12 +491,14 @@ export default function ListingDetail() {
               <span aria-hidden>↗</span>
               <span>공유</span>
             </button>
-            <button
-              onClick={onClickChat}
-              className="h-11 px-6 text-sm font-semibold text-white bg-black rounded-lg hover:opacity-90 flex-1 sm:flex-none"
-            >
-              채팅하기
-            </button>
+            {!canDelete && (
+              <button
+                onClick={onClickChat}
+                className="h-11 px-6 text-sm font-semibold text-white bg-black rounded-lg hover:opacity-90 flex-1 sm:flex-none"
+              >
+                채팅하기
+              </button>
+            )}
             {product.status === "selling" && !canDelete && (
               <button
                 onClick={onClickReserve}

@@ -12,6 +12,7 @@ type User =
       avatarUrl?: string;
       location?: string;
       bio?: string;
+      isAdmin?: boolean;
     }
   | null;
 
