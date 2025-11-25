@@ -26,7 +26,7 @@ export default function Footer() {
         <div className="space-y-2 text-xs leading-6 text-[#000000] sm:text-sm">
           <p>본 서비스는 지역 기반 중고 대여 거래 플랫폼입니다.</p>
           <p>
-            <strong>대표:</strong> 문준수 | <strong>이메일:</strong>{" "}
+            <strong>대표:</strong> 장준수 | <strong>이메일:</strong>{" "}
             <a
               href="mailto:junsumon090608@dgsw.hs.kr"
               className="underline underline-offset-2"
