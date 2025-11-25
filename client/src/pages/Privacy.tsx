@@ -1,4 +1,8 @@
+import { usePageTitle } from "../hooks/usePageTitle";
+
 export default function Privacy() {
+  usePageTitle("개인정보처리방침", "BILIDA의 개인정보 수집 및 이용에 관한 방침입니다.");
+
   return (
     <div className="container py-10 max-w-4xl">
       <h1 className="text-3xl font-extrabold mb-8">개인정보처리방침</h1>
