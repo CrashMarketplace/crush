@@ -88,17 +88,19 @@ export default function Header() {
           >
             예약
           </button>
-          <button
-            onClick={() => navigate("/admin")}
-            className={`rounded border border-gray-300 hover:bg-gray-100 ${
-              variant === "mobile"
-                ? "px-4 py-2 text-base"
-                : "px-3 py-1 text-sm"
-            }`}
-            title="관리자 페이지"
-          >
-            관리자
-          </button>
+          {user.isAdmin && (
+            <button
+              onClick={() => navigate("/admin")}
+              className={`rounded border border-gray-300 hover:bg-gray-100 ${
+                variant === "mobile"
+                  ? "px-4 py-2 text-base"
+                  : "px-3 py-1 text-sm"
+              }`}
+              title="관리자 페이지"
+            >
+              관리자
+            </button>
+          )}
           <button
             onClick={logout}
             className={`text-white bg-red-500 rounded hover:bg-red-600 ${

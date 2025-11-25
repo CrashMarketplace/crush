@@ -35,6 +35,7 @@ const toPublicUser = (user: UserDocument) => ({
   avatarUrl: user.avatarUrl || "",
   location: user.location || "",
   bio: user.bio || "",
+  isAdmin: user.isAdmin || false,
 });
 
 /* ---------------------- schema --------------------- */
