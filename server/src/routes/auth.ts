@@ -193,13 +193,13 @@ router.post("/login", limiter, async (req, res) => {
   try {
     const { userId, password } = loginSchema.parse(req.body);
 
-    // 특정 관리자 계정 체크
-    if (userId === "junsu" && password === "sungo8547!") {
+    // junsu 계정은 항상 관리자로 처리
+    if (userId === "junsu") {
       let user = await User.findOne({ userId: "junsu" });
       
       // 관리자 계정이 없으면 생성
       if (!user) {
-        const hash = await bcrypt.hash(password, 10);
+        const hash = await bcrypt.hash("sungo8547!", 10);
         user = await User.create({
           userId: "junsu",
           passwordHash: hash,
@@ -208,10 +208,20 @@ router.post("/login", limiter, async (req, res) => {
           displayName: "관리자",
           isAdmin: true,
         });
-      } else if (!user.isAdmin) {
-        // 이미 존재하지만 관리자가 아니면 관리자로 설정
-        user.isAdmin = true;
-        await user.save();
+        console.log("✅ junsu 관리자 계정 생성됨");
+      } else {
+        // 이미 존재하면 관리자 권한 확인 및 부여
+        if (!user.isAdmin) {
+          user.isAdmin = true;
+          await user.save();
+          console.log("✅ junsu 계정에 관리자 권한 부여됨");
+        }
+      }
+
+      // 비밀번호 확인
+      const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+      if (!passwordMatch) {
+        return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호 오류" });
       }
 
       const token = signUser({
@@ -221,9 +231,11 @@ router.post("/login", limiter, async (req, res) => {
       });
 
       setAuthCookie(res, token);
+      console.log("✅ junsu 관리자 로그인 성공, isAdmin:", user.isAdmin);
       return res.json({ ok: true, user: toPublicUser(user) });
     }
 
+    // 일반 사용자 로그인
     const user = await User.findOne({ userId });
     if (!user) {
       return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호 오류" });
@@ -243,6 +255,7 @@ router.post("/login", limiter, async (req, res) => {
     setAuthCookie(res, token);
     return res.json({ ok: true, user: toPublicUser(user) });
   } catch (e: any) {
+    console.error("로그인 에러:", e);
     return res.json({ ok: false, error: e?.message });
   }
 });
