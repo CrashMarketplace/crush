@@ -79,6 +79,41 @@ router.get("/:id", async (req, res) => {
 });
 
 // ------------------------------
+// 수정 (본인만)
+// ------------------------------
+router.patch("/:id", async (req, res) => {
+  const user = readUserFromReq(req);
+  if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
+
+  const item = await Product.findById(req.params.id);
+  if (!item) return res.status(404).json({ ok: false, error: "not_found" });
+
+  if (String(item.seller) !== String(user.id)) {
+    return res.status(403).json({ ok: false, error: "forbidden" });
+  }
+
+  const UpdateBody = z.object({
+    title: z.string().min(1).optional(),
+    description: z.string().optional(),
+    price: z.number().nonnegative().optional(),
+    category: z.string().optional(),
+    location: z.string().optional(),
+    images: z.array(z.string()).optional(),
+    usedAvailable: z.boolean().optional(),
+  });
+
+  const parsed = UpdateBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ ok: false, error: parsed.error.message });
+  }
+
+  Object.assign(item, parsed.data);
+  await item.save();
+
+  return res.json({ ok: true, product: item });
+});
+
+// ------------------------------
 // 삭제 (본인만)
 // ------------------------------
 router.delete("/:id", async (req, res) => {

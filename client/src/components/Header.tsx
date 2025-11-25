@@ -67,6 +67,39 @@ export default function Header() {
             마이페이지
           </button>
           <button
+            onClick={() => navigate("/chats")}
+            className={`rounded border border-gray-300 hover:bg-gray-100 ${
+              variant === "mobile"
+                ? "px-4 py-2 text-base"
+                : "px-3 py-1 text-sm"
+            }`}
+            title="채팅으로 이동"
+          >
+            채팅
+          </button>
+          <button
+            onClick={() => navigate("/reservations")}
+            className={`rounded border border-gray-300 hover:bg-gray-100 ${
+              variant === "mobile"
+                ? "px-4 py-2 text-base"
+                : "px-3 py-1 text-sm"
+            }`}
+            title="예약 내역"
+          >
+            예약
+          </button>
+          <button
+            onClick={() => navigate("/admin")}
+            className={`rounded border border-gray-300 hover:bg-gray-100 ${
+              variant === "mobile"
+                ? "px-4 py-2 text-base"
+                : "px-3 py-1 text-sm"
+            }`}
+            title="관리자 페이지"
+          >
+            관리자
+          </button>
+          <button
             onClick={logout}
             className={`text-white bg-red-500 rounded hover:bg-red-600 ${
               variant === "mobile"

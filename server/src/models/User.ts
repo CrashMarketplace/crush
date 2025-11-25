@@ -15,6 +15,8 @@ const UserSchema = new Schema(
     avatarUrl: { type: String, default: "" },
     location: { type: String, default: "" },
     bio: { type: String, default: "" },
+    isAdmin: { type: Boolean, default: false },
+    isBanned: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

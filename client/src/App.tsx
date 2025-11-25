@@ -14,6 +14,9 @@ import Categories from "./pages/Categories";
 import AllProducts from "./pages/AllProducts";
 import MyPage from "./pages/MyPage";
 import Chats from "./pages/Chats";
+import Admin from "./pages/Admin";
+import ProductEdit from "./pages/ProductEdit";
+import Reservations from "./pages/Reservations";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 const HIDE_LAYOUT_PATHS = ["/login", "/signup"] as const;
@@ -52,6 +55,9 @@ export default function App() {
               <Route path="/mypage" element={<MyPage />} />
               <Route path="/chats" element={<Chats />} />
               <Route path="/chats/:id" element={<Chats />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/product/edit/:id" element={<ProductEdit />} />
+              <Route path="/reservations" element={<Reservations />} />
             </Route>
             </Routes>
           </main>

@@ -129,9 +129,50 @@ export default function ListingDetail() {
       alert(e?.message || "채팅 시작에 실패했습니다.");
     }
   };
+
+  const onClickReserve = async () => {
+    if (!user) {
+      navigate("/login", { replace: true });
+      return;
+    }
+    if (!id || !product) return;
+    if (product.status !== "selling") {
+      alert("현재 예약할 수 없는 상품입니다.");
+      return;
+    }
+
+    const meetingLocation = prompt("만날 장소를 입력해주세요 (선택):");
+    const meetingTime = prompt("만날 시간을 입력해주세요 (예: 2025-12-01 14:00, 선택):");
+    const notes = prompt("메모 (선택):");
+
+    try {
+      const res = await fetch(buildApiUrl("/reservations"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: id,
+          meetingLocation: meetingLocation || "",
+          meetingTime: meetingTime || undefined,
+          notes: notes || "",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data?.ok === false) throw new Error(data?.error || "예약 실패");
+      alert("예약이 완료되었습니다!");
+      window.location.reload();
+    } catch (e: any) {
+      alert(e?.message || "예약에 실패했습니다.");
+    }
+  };
   const onToggleStatus = async () => {
     if (!product || !canDelete || statusBusy) return;
-    const next = product.status === "sold" ? "selling" : "sold";
+    const next =
+      product.status === "selling"
+        ? "reserved"
+        : product.status === "reserved"
+        ? "sold"
+        : "selling";
     setStatusBusy(true);
     try {
       const res = await fetch(buildApiUrl(`/products/${product._id}/status`), {
@@ -456,8 +497,22 @@ export default function ListingDetail() {
             >
               채팅하기
             </button>
+            {product.status === "selling" && !canDelete && (
+              <button
+                onClick={onClickReserve}
+                className="h-11 px-6 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:opacity-90 flex-1 sm:flex-none"
+              >
+                예약하기
+              </button>
+            )}
             {canDelete ? (
               <>
+                <button
+                  onClick={() => navigate(`/product/edit/${product._id}`)}
+                  className="h-10 px-4 text-sm font-semibold border rounded-lg hover:bg-gray-50"
+                >
+                  수정
+                </button>
                 <button
                   onClick={onToggleStatus}
                   disabled={statusBusy}
@@ -467,7 +522,9 @@ export default function ListingDetail() {
                     ? "처리 중..."
                     : product.status === "sold"
                     ? "판매중으로 변경"
-                    : "판매완료 표시"}
+                    : product.status === "reserved"
+                    ? "판매완료 표시"
+                    : "예약중으로 변경"}
                 </button>
                 <button
                   onClick={onClickDelete}
