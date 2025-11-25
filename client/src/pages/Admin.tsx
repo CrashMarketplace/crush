@@ -39,10 +39,14 @@ type Reservation = {
   createdAt: string;
 };
 
+import { usePageTitle } from "../hooks/usePageTitle";
+
 export default function Admin() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"products" | "users" | "chats" | "reservations">("products");
+
+  usePageTitle("관리자 페이지", "BILIDA 관리자 페이지 - 상품, 사용자, 채팅, 예약 관리");
 
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<User[]>([]);

@@ -12,10 +12,14 @@ type Notification = {
   createdAt: string;
 };
 
+import { usePageTitle } from "../hooks/usePageTitle";
+
 export default function Notifications() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+
+  usePageTitle("알림", "새로운 예약, 채팅 메시지 등 알림을 확인하세요.");
 
   useEffect(() => {
     loadNotifications();

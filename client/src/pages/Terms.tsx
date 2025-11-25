@@ -1,4 +1,8 @@
+import { usePageTitle } from "../hooks/usePageTitle";
+
 export default function Terms() {
+  usePageTitle("이용약관", "BILIDA 서비스 이용약관을 확인하세요.");
+
   return (
     <div className="container py-10 max-w-4xl">
       <h1 className="text-3xl font-extrabold mb-8">이용약관</h1>

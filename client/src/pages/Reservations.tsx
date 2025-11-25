@@ -15,11 +15,15 @@ type Reservation = {
   createdAt: string;
 };
 
+import { usePageTitle } from "../hooks/usePageTitle";
+
 export default function Reservations() {
   const navigate = useNavigate();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  usePageTitle("예약 내역", "내 예약 목록을 확인하고 관리하세요.");
 
   useEffect(() => {
     loadReservations();

@@ -1,4 +1,8 @@
+import { usePageTitle } from "../hooks/usePageTitle";
+
 export default function About() {
+  usePageTitle("회사소개", "BILIDA는 지역 기반 중고 거래 및 대여 플랫폼입니다. 사용하지 않는 물건에 새로운 가치를 부여합니다.");
+
   return (
     <div className="container py-10 max-w-4xl">
       <h1 className="text-3xl font-extrabold mb-8">회사소개</h1>
