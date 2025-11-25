@@ -54,8 +54,8 @@ router.get("/my", async (req, res) => {
     $or: [{ buyer: user.id }, { seller: user.id }],
   })
     .populate("product", "title price images")
-    .populate("buyer", "userId displayName")
-    .populate("seller", "userId displayName")
+    .populate("buyer", "_id userId displayName")
+    .populate("seller", "_id userId displayName")
     .sort({ createdAt: -1 });
 
   return res.json({ ok: true, reservations });

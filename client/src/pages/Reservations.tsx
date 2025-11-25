@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../utils/apiConfig";
 
 type Reservation = {
   _id: string;
   product: { _id: string; title: string; price: number; images: string[] };
-  buyer: { userId: string; displayName: string };
-  seller: { userId: string; displayName: string };
+  buyer: { _id?: string; userId: string; displayName: string };
+  seller: { _id?: string; userId: string; displayName: string };
   status: "pending" | "confirmed" | "cancelled" | "completed";
   meetingLocation: string;
   meetingTime?: string;
@@ -82,6 +83,8 @@ export default function Reservations() {
     return <div className="container py-10 text-center text-red-600">{error}</div>;
   }
 
+  const { user } = useAuth();
+
   return (
     <div className="container py-10">
       <h1 className="mb-8 text-3xl font-extrabold">내 예약</h1>
@@ -90,7 +93,11 @@ export default function Reservations() {
         <div className="text-gray-500">예약 내역이 없습니다.</div>
       ) : (
         <div className="space-y-4">
-          {reservations.map((r) => (
+          {reservations.map((r) => {
+            const isSeller = user && String(r.seller._id || r.seller.userId) === String(user.id);
+            const isBuyer = user && String(r.buyer._id || r.buyer.userId) === String(user.id);
+            
+            return (
             <div key={r._id} className="card p-4">
               <div className="flex gap-4">
                 <img
@@ -99,11 +106,23 @@ export default function Reservations() {
                   className="w-24 h-24 object-cover rounded"
                 />
                 <div className="flex-1">
-                  <div
-                    className="font-semibold text-lg cursor-pointer hover:underline"
-                    onClick={() => navigate(`/listing/${r.product._id}`)}
-                  >
-                    {r.product.title}
+                  <div className="flex items-center gap-2 mb-1">
+                    <div
+                      className="font-semibold text-lg cursor-pointer hover:underline"
+                      onClick={() => navigate(`/listing/${r.product._id}`)}
+                    >
+                      {r.product.title}
+                    </div>
+                    {isSeller && (
+                      <span className="px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded">
+                        판매자
+                      </span>
+                    )}
+                    {isBuyer && (
+                      <span className="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded">
+                        구매자
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-600">
                     {r.product.price.toLocaleString()}원
@@ -142,7 +161,7 @@ export default function Reservations() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {r.status === "pending" && (
+                  {isSeller && r.status === "pending" && (
                     <>
                       <button
                         onClick={() => updateStatus(r._id, "confirmed")}
@@ -158,7 +177,7 @@ export default function Reservations() {
                       </button>
                     </>
                   )}
-                  {r.status === "confirmed" && (
+                  {isSeller && r.status === "confirmed" && (
                     <button
                       onClick={() => updateStatus(r._id, "completed")}
                       className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
@@ -166,10 +185,19 @@ export default function Reservations() {
                       완료
                     </button>
                   )}
+                  {isBuyer && r.status === "pending" && (
+                    <button
+                      onClick={() => updateStatus(r._id, "cancelled")}
+                      className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      취소
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
     </div>

