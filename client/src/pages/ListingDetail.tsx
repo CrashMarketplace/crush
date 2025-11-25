@@ -516,6 +516,12 @@ export default function ListingDetail() {
                   수정
                 </button>
                 <button
+                  onClick={() => navigate("/reservations")}
+                  className="h-10 px-4 text-sm font-semibold border border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50"
+                >
+                  예약 확인
+                </button>
+                <button
                   onClick={onToggleStatus}
                   disabled={statusBusy}
                   className="h-10 px-4 text-sm font-semibold border rounded-lg hover:bg-gray-50 disabled:opacity-60"
