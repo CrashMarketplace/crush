@@ -22,6 +22,7 @@ import uploadRouter from "./routes/upload";
 import chatsRouter from "./routes/chats";
 import adminRouter from "./routes/admin";
 import reservationsRouter from "./routes/reservations";
+import notificationsRouter from "./routes/notifications";
 import { initSocketServer } from "./realtime/socketManager";
 import uploadsRouter from "./routes/uploads";
 
@@ -192,6 +193,7 @@ app.use("/api/products", productsRouter);
 app.use("/api/chats", chatsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/reservations", reservationsRouter);
+app.use("/api/notifications", notificationsRouter);
 app.use("/api/uploads", uploadsRouter);
 app.use("/api/upload", uploadsRouter);
 

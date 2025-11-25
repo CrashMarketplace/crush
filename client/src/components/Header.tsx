@@ -16,10 +16,37 @@ export default function Header() {
   const { user, loading, logout } = useAuth();
   const [query, setQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const loadUnreadCount = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:4000"}/api/notifications/unread-count`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (res.ok && data.ok !== false) {
+          setUnreadCount(data.count || 0);
+        }
+      } catch (e) {
+        console.error("읽지 않은 알림 개수 로드 실패:", e);
+      }
+    };
+
+    loadUnreadCount();
+    const interval = setInterval(loadUnreadCount, 30000); // 30초마다 갱신
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   const goSell = () => {
     if (user) {
@@ -87,6 +114,22 @@ export default function Header() {
             title="예약 내역"
           >
             예약
+          </button>
+          <button
+            onClick={() => navigate("/notifications")}
+            className={`relative rounded border border-gray-300 hover:bg-gray-100 ${
+              variant === "mobile"
+                ? "px-4 py-2 text-base"
+                : "px-3 py-1 text-sm"
+            }`}
+            title="알림"
+          >
+            알림
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </button>
           {user.isAdmin && (
             <button
