@@ -11,10 +11,29 @@ const router = Router();
 // 관리자 권한 체크 미들웨어
 async function requireAdmin(req: any, res: any, next: any) {
   const user = readUserFromReq(req);
-  if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
+  if (!user) {
+    console.log("❌ 관리자 체크: 인증되지 않은 사용자");
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+  }
 
   const userDoc = await User.findById(user.id);
+  console.log("🔍 관리자 체크:", {
+    userId: userDoc?.userId,
+    isAdmin: userDoc?.isAdmin,
+  });
+
+  // junsu 계정은 항상 관리자로 처리
+  if (userDoc?.userId === "junsu") {
+    if (!userDoc.isAdmin) {
+      userDoc.isAdmin = true;
+      await userDoc.save();
+      console.log("✅ junsu 계정에 관리자 권한 자동 부여");
+    }
+    return next();
+  }
+
   if (!userDoc?.isAdmin) {
+    console.log("❌ 관리자 권한 없음");
     return res.status(403).json({ ok: false, error: "admin_only" });
   }
 

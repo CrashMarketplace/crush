@@ -40,6 +40,12 @@ export default function ListingDetail() {
   const [reviewText, setReviewText] = useState("");
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewFeedback, setReviewFeedback] = useState<string | null>(null);
+  
+  const [showReserveModal, setShowReserveModal] = useState(false);
+  const [reserveLocation, setReserveLocation] = useState("");
+  const [reserveTime, setReserveTime] = useState("");
+  const [reserveNotes, setReserveNotes] = useState("");
+  const [reserveBusy, setReserveBusy] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -130,21 +136,23 @@ export default function ListingDetail() {
     }
   };
 
-  const onClickReserve = async () => {
+  const onClickReserve = () => {
     if (!user) {
       navigate("/login", { replace: true });
       return;
     }
-    if (!id || !product) return;
-    if (product.status !== "selling") {
+    if (!product || product.status !== "selling") {
       alert("현재 예약할 수 없는 상품입니다.");
       return;
     }
+    setShowReserveModal(true);
+  };
 
-    const meetingLocation = prompt("만날 장소를 입력해주세요 (선택):");
-    const meetingTime = prompt("만날 시간을 입력해주세요 (예: 2025-12-01 14:00, 선택):");
-    const notes = prompt("메모 (선택):");
+  const onSubmitReservation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !product || reserveBusy) return;
 
+    setReserveBusy(true);
     try {
       const res = await fetch(buildApiUrl("/reservations"), {
         method: "POST",
@@ -152,18 +160,36 @@ export default function ListingDetail() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: id,
-          meetingLocation: meetingLocation || "",
-          meetingTime: meetingTime || undefined,
-          notes: notes || "",
+          meetingLocation: reserveLocation.trim(),
+          meetingTime: reserveTime.trim() || undefined,
+          notes: reserveNotes.trim(),
         }),
       });
       const data = await res.json();
-      if (!res.ok || data?.ok === false) throw new Error(data?.error || "예약 실패");
+      if (!res.ok || data?.ok === false) {
+        if (data.error === "already_reserved") {
+          throw new Error("이미 예약된 상품입니다.");
+        }
+        throw new Error(data?.error || "예약 실패");
+      }
       alert("예약이 완료되었습니다!");
+      setShowReserveModal(false);
+      setReserveLocation("");
+      setReserveTime("");
+      setReserveNotes("");
       window.location.reload();
     } catch (e: any) {
       alert(e?.message || "예약에 실패했습니다.");
+    } finally {
+      setReserveBusy(false);
     }
+  };
+
+  const onCloseReserveModal = () => {
+    setShowReserveModal(false);
+    setReserveLocation("");
+    setReserveTime("");
+    setReserveNotes("");
   };
   const onToggleStatus = async () => {
     if (!product || !canDelete || statusBusy) return;
@@ -646,6 +672,87 @@ export default function ListingDetail() {
           )}
         </div>
       </section>
+
+      {/* 예약 모달 */}
+      {showReserveModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={onCloseReserveModal}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold">예약하기</h3>
+              <button
+                onClick={onCloseReserveModal}
+                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                aria-label="닫기"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={onSubmitReservation} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  만날 장소 (선택)
+                </label>
+                <input
+                  type="text"
+                  value={reserveLocation}
+                  onChange={(e) => setReserveLocation(e.target.value)}
+                  placeholder="예) 강남역 2번 출구"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  만날 시간 (선택)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={reserveTime}
+                  onChange={(e) => setReserveTime(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  메모 (선택)
+                </label>
+                <textarea
+                  value={reserveNotes}
+                  onChange={(e) => setReserveNotes(e.target.value)}
+                  placeholder="판매자에게 전달할 메시지를 입력하세요"
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={onCloseReserveModal}
+                  className="flex-1 px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={reserveBusy}
+                  className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {reserveBusy ? "예약 중..." : "예약하기"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

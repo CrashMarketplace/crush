@@ -30,6 +30,16 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ ok: false, error: "product_not_available" });
   }
 
+  // 이미 예약이 있는지 확인
+  const existingReservation = await Reservation.findOne({
+    product: product._id,
+    status: { $in: ["pending", "confirmed"] },
+  });
+
+  if (existingReservation) {
+    return res.status(400).json({ ok: false, error: "already_reserved" });
+  }
+
   const reservation = await Reservation.create({
     product: product._id,
     buyer: user.id,
