@@ -36,7 +36,7 @@ export default function Privacy() {
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-4">5. 개인정보 보호책임자</h2>
           <div className="bg-gray-50 p-6 rounded-lg">
-            <p><strong>성명:</strong> 문준수</p>
+            <p><strong>성명:</strong> 장준수</p>
             <p><strong>이메일:</strong> junsumon090608@dgsw.hs.kr</p>
           </div>
         </section>

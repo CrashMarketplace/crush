@@ -62,7 +62,7 @@ export default function About() {
           <div className="bg-gray-50 p-6 rounded-lg space-y-2">
             <p><strong>상호:</strong> BILIDA</p>
             <p><strong>설립일:</strong> 2024년</p>
-            <p><strong>대표:</strong> 문준수</p>
+            <p><strong>대표:</strong> 장준수</p>
             <p><strong>이메일:</strong> junsumon090608@dgsw.hs.kr</p>
             <p><strong>주소:</strong> 대구광역시</p>
           </div>
