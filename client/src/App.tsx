@@ -18,6 +18,9 @@ import Admin from "./pages/Admin";
 import ProductEdit from "./pages/ProductEdit";
 import Reservations from "./pages/Reservations";
 import Notifications from "./pages/Notifications";
+import About from "./pages/About";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 const HIDE_LAYOUT_PATHS = ["/login", "/signup"] as const;
@@ -50,6 +53,9 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/sell" element={<ProductNew />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
 
             {/* 인증 필요한 페이지 (예시) */}
             <Route element={<ProtectedRoute />}>
