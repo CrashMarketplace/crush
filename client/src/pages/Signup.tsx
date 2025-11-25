@@ -193,18 +193,18 @@ export default function Signup() {
             {/* 왼쪽 브랜드 */}
             <div className="relative flex items-center justify-center p-10 md:p-14">
               <div className="space-y-2 text-left">
-                <p className="text-zinc-300 leading-tight text-lg md:text-xl">
-                  빠르고
+                <p className="text-lg leading-tight text-zinc-300 md:text-xl">
+                  대여가 가능한
                   <br />
-                  간편한
+                  새로워진
                   <br />
-                  중고거래
+                  중고거래 플랫폼
                 </p>
                 <div className="pt-2 text-4xl md:text-[44px] font-extrabold tracking-tight">
-                  KRUSH
+                  BILIDA
                 </div>
               </div>
-              <div className="hidden absolute right-0 top-8 bottom-8 w-px md:block bg-white/30" />
+              <div className="absolute right-0 hidden w-px top-8 bottom-8 md:block bg-white/30" />
             </div>
 
             {/* 오른쪽 단계별 폼 */}
@@ -212,13 +212,13 @@ export default function Signup() {
               {/* Step 0: 약관 */}
               {step === 0 && (
                 <form
-                  className="mx-auto space-y-4 w-full max-w-sm"
+                  className="w-full max-w-sm mx-auto space-y-4"
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (canGoStep1) setStep(1);
                   }}
                 >
-                  <label className="flex gap-2 items-center text-sm">
+                  <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       className="w-4 h-4 accent-white"
@@ -229,7 +229,7 @@ export default function Signup() {
                     <span className="text-zinc-400">(선택 포함)</span>
                   </label>
 
-                  <label className="flex gap-2 items-center text-sm">
+                  <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       className="w-4 h-4 accent-white"
@@ -246,7 +246,7 @@ export default function Signup() {
                     </button>
                   </label>
 
-                  <label className="flex gap-2 items-center text-sm">
+                  <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       className="w-4 h-4 accent-white"
@@ -262,7 +262,7 @@ export default function Signup() {
                     </button>
                   </label>
 
-                  <label className="flex gap-2 items-center text-sm">
+                  <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       className="w-4 h-4 accent-white"
@@ -282,7 +282,7 @@ export default function Signup() {
                   <button
                     type="submit"
                     disabled={!canGoStep1}
-                    className="py-2 w-full font-semibold bg-white rounded-md text-neutral-900 disabled:opacity-50"
+                    className="w-full py-2 font-semibold bg-white rounded-md text-neutral-900 disabled:opacity-50"
                   >
                     다음
                   </button>
@@ -293,7 +293,7 @@ export default function Signup() {
               {/* Step 1: 아이디/비밀번호 */}
               {step === 1 && (
                 <form
-                  className="mx-auto space-y-4 w-full max-w-sm"
+                  className="w-full max-w-sm mx-auto space-y-4"
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (canGoStep2) setStep(2);
@@ -323,7 +323,7 @@ export default function Signup() {
                   <button
                     type="submit"
                     disabled={!canGoStep2}
-                    className="py-2 w-full font-semibold bg-white rounded-md text-neutral-900 disabled:opacity-50"
+                    className="w-full py-2 font-semibold bg-white rounded-md text-neutral-900 disabled:opacity-50"
                   >
                     다음
                   </button>
@@ -339,7 +339,7 @@ export default function Signup() {
               {/* Step 2: 이메일 입력 & 전송 */}
               {step === 2 && (
                 <form
-                  className="mx-auto space-y-4 w-full max-w-sm"
+                  className="w-full max-w-sm mx-auto space-y-4"
                   onSubmit={(e) => {
                     e.preventDefault();
                     sendCode();
@@ -358,7 +358,7 @@ export default function Signup() {
                   <button
                     type="submit"
                     disabled={sending || !email.includes("@")}
-                    className="py-2 w-full font-semibold bg-white rounded-md text-neutral-900 disabled:opacity-50"
+                    className="w-full py-2 font-semibold bg-white rounded-md text-neutral-900 disabled:opacity-50"
                   >
                     {sending ? "전송 중..." : "이메일 인증"}
                   </button>
@@ -379,7 +379,7 @@ export default function Signup() {
               {/* Step 3: 코드 입력 & 확인 & 회원가입 */}
               {step === 3 && (
                 <form
-                  className="mx-auto space-y-4 w-full max-w-sm"
+                  className="w-full max-w-sm mx-auto space-y-4"
                   onSubmit={(e) => {
                     e.preventDefault();
                     doSignup();
@@ -403,7 +403,7 @@ export default function Signup() {
                       autoComplete="one-time-code"
                       style={{ caretColor: "white" }}
                     />
-                    <div className="flex absolute right-2 top-1/2 gap-2 items-center text-xs -translate-y-1/2 text-zinc-300">
+                    <div className="absolute flex items-center gap-2 text-xs -translate-y-1/2 right-2 top-1/2 text-zinc-300">
                       <span>{formatTime(timeLeft)}</span>
                       <button
                         type="button"
@@ -432,7 +432,7 @@ export default function Signup() {
                   <button
                     type="submit"
                     disabled={!verified || signing}
-                    className="py-2 w-full font-semibold bg-white rounded-md text-neutral-900 disabled:opacity-50"
+                    className="w-full py-2 font-semibold bg-white rounded-md text-neutral-900 disabled:opacity-50"
                   >
                     {signing ? "가입 중..." : "회원가입"}
                   </button>

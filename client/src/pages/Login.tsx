@@ -44,24 +44,24 @@ export default function Login() {
             {/* 왼쪽 카피 영역 */}
             <div className="relative flex items-center justify-center p-10 md:p-14">
               <div className="space-y-2 text-center md:text-left">
-                <p className="text-zinc-300 leading-tight text-lg md:text-xl">
-                  빠르고
+                <p className="text-lg leading-tight text-zinc-300 md:text-xl">
+                  대여가 가능한
                   <br />
-                  간편한
+                  새로워진
                   <br />
-                  중고거래
+                  중고거래 플랫폼
                 </p>
                 <div className="pt-2 text-4xl font-extrabold tracking-tight md:text-[44px]">
-                  KRUSH
+                  BILIDA
                 </div>
               </div>
-              <div className="hidden absolute right-0 top-8 bottom-8 w-px md:block bg-white/30" />
+              <div className="absolute right-0 hidden w-px top-8 bottom-8 md:block bg-white/30" />
             </div>
 
             {/* 오른쪽 폼 영역 */}
             <div className="p-8 pb-12 md:p-12">
               <form
-                className="mx-auto space-y-4 w-full max-w-sm"
+                className="w-full max-w-sm mx-auto space-y-4"
                 onSubmit={onSubmit}
               >
                 {/* 아이디 */}
@@ -73,7 +73,7 @@ export default function Login() {
                     value={userId}
                     onChange={(e) => setUserId(e.target.value)}
                     autoComplete="username"
-                    className="px-3 py-2 w-full text-white rounded-md border border-white/25 bg-white/10 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-white/40"
+                    className="w-full px-3 py-2 text-white border rounded-md border-white/25 bg-white/10 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-white/40"
                   />
                 </div>
 
@@ -86,12 +86,12 @@ export default function Login() {
                     value={pw}
                     onChange={(e) => setPw(e.target.value)}
                     autoComplete="current-password"
-                    className="px-3 py-2 pr-10 w-full text-white rounded-md border border-white/25 bg-white/10 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-white/40"
+                    className="w-full px-3 py-2 pr-10 text-white border rounded-md border-white/25 bg-white/10 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-white/40"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-300 hover:text-white"
+                    className="absolute -translate-y-1/2 right-2 top-1/2 text-zinc-300 hover:text-white"
                     title={showPw ? "숨기기" : "보기"}
                   >
                     {showPw ? "🙈" : "👁️"}
@@ -102,7 +102,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="py-2 w-full font-semibold bg-white rounded-md text-neutral-900 hover:opacity-90 disabled:opacity-50"
+                  className="w-full py-2 font-semibold bg-white rounded-md text-neutral-900 hover:opacity-90 disabled:opacity-50"
                 >
                   {authBusy ? "로그인 중..." : "로그인"}
                 </button>
@@ -113,7 +113,7 @@ export default function Login() {
                 )}
 
                 {/* 하단 링크 */}
-                <div className="flex justify-between items-center text-xs text-zinc-300">
+                <div className="flex items-center justify-between text-xs text-zinc-300">
                   <div className="space-x-2">
                     <Link to="#" className="underline underline-offset-2">
                       비밀번호 찾기
