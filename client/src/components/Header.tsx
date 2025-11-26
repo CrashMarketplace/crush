@@ -136,45 +136,45 @@ export default function Header() {
       // Desktop
       return (
         <>
-          <span className="text-base text-gray-800 font-semibold whitespace-nowrap">
+          <span className="text-[15px] text-gray-800 font-semibold whitespace-nowrap">
             {(user.displayName || user.userId) + " 님"}
           </span>
-          <div className="w-px h-5 bg-gray-300"></div>
+          <div className="w-px h-4 bg-gray-300"></div>
           <button
             onClick={() => navigate("/mypage")}
-            className="text-base text-gray-700 hover:text-blue-600 transition-colors"
+            className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
             title="마이페이지로 이동"
           >
             마이페이지
           </button>
-          <div className="w-px h-5 bg-gray-300"></div>
+          <div className="w-px h-4 bg-gray-300"></div>
           <button
             onClick={() => navigate("/chats")}
-            className="text-base text-gray-700 hover:text-blue-600 transition-colors"
+            className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
             title="채팅으로 이동"
           >
             채팅
           </button>
-          <div className="w-px h-5 bg-gray-300"></div>
+          <div className="w-px h-4 bg-gray-300"></div>
           <button
             onClick={() => navigate("/reservations")}
-            className="text-base text-gray-700 hover:text-blue-600 transition-colors"
+            className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
             title="예약 내역"
           >
             예약
           </button>
-          <div className="w-px h-5 bg-gray-300"></div>
+          <div className="w-px h-4 bg-gray-300"></div>
           <button
             onClick={() => navigate("/payments")}
-            className="text-base text-gray-700 hover:text-blue-600 transition-colors"
+            className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
             title="결제 내역"
           >
             결제
           </button>
-          <div className="w-px h-5 bg-gray-300"></div>
+          <div className="w-px h-4 bg-gray-300"></div>
           <button
             onClick={() => navigate("/notifications")}
-            className="relative text-base text-gray-700 hover:text-blue-600 transition-colors"
+            className="relative text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
             title="알림"
           >
             알림
@@ -186,20 +186,20 @@ export default function Header() {
           </button>
           {user.isAdmin && (
             <>
-              <div className="w-px h-5 bg-gray-300"></div>
+              <div className="w-px h-4 bg-gray-300"></div>
               <button
                 onClick={() => navigate("/admin")}
-                className="text-base text-gray-700 hover:text-blue-600 transition-colors"
+                className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
                 title="관리자 페이지"
               >
                 관리자
               </button>
             </>
           )}
-          <div className="w-px h-5 bg-gray-300"></div>
+          <div className="w-px h-4 bg-gray-300"></div>
           <button
             onClick={logout}
-            className="text-base text-gray-700 hover:text-gray-900 transition-colors"
+            className="text-[15px] text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
           >
             로그아웃
           </button>
@@ -230,14 +230,14 @@ export default function Header() {
       <>
         <button
           onClick={() => navigate("/login")}
-          className="text-base text-gray-700 hover:text-blue-600 transition-colors"
+          className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
         >
           로그인
         </button>
-        <div className="w-px h-5 bg-gray-300"></div>
+        <div className="w-px h-4 bg-gray-300"></div>
         <button
           onClick={() => navigate("/signup")}
-          className="text-base text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+          className="text-[15px] text-blue-600 hover:text-blue-700 font-semibold transition-colors whitespace-nowrap"
         >
           회원가입
         </button>
@@ -249,8 +249,8 @@ export default function Header() {
     <header className="sticky top-0 z-30 bg-white shadow-md">
       {/* 메인 헤더 */}
       <div className="border-b border-gray-200">
-        <div className="container">
-          <div className="flex items-center justify-between py-6 gap-8">
+        <div className="container max-w-[1400px] mx-auto px-6">
+          <div className="flex items-center py-6 gap-6">
             {/* 로고 */}
             <button onClick={() => navigate("/")} className="flex items-center flex-shrink-0">
               <img
@@ -261,10 +261,11 @@ export default function Header() {
               />
             </button>
 
-            {/* 검색창 (데스크톱) */}
+            {/* 검색창 (데스크톱) - 중앙에 넓게 */}
             <form
               onSubmit={onSubmitSearch}
-              className="hidden sm:flex flex-1 max-w-2xl mx-8"
+              className="hidden lg:flex flex-1 max-w-3xl"
+              style={{ minWidth: '500px' }}
             >
               <div className="relative w-full">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500">
@@ -283,15 +284,15 @@ export default function Header() {
             </form>
 
             {/* 우측 메뉴 (데스크톱) */}
-            <div className="hidden sm:flex items-center gap-6 flex-shrink-0">
+            <div className="hidden lg:flex items-center gap-4 flex-shrink-0 ml-auto">
               <button
                 onClick={goSell}
-                className="px-7 py-4 text-base font-semibold text-white rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 transition-all shadow-md hover:shadow-lg"
+                className="px-6 py-3.5 text-[15px] font-semibold text-white rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 transition-all shadow-md hover:shadow-lg whitespace-nowrap"
                 title={user ? "상품 등록하기" : "로그인하고 상품 등록하기"}
               >
                 + 등록하기
               </button>
-              <div className="flex items-center gap-5 pl-6 border-l-2 border-gray-200">
+              <div className="flex items-center gap-4 pl-4 border-l-2 border-gray-200">
                 {renderAuthActions("desktop")}
               </div>
             </div>
@@ -300,7 +301,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100"
+              className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 ml-auto"
               aria-label="모바일 메뉴 토글"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -314,7 +315,7 @@ export default function Header() {
           </div>
 
           {/* 검색창 (모바일) */}
-          <form onSubmit={onSubmitSearch} className="sm:hidden pb-4">
+          <form onSubmit={onSubmitSearch} className="lg:hidden pb-4">
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -335,7 +336,7 @@ export default function Header() {
 
       {/* 네비게이션 메뉴 */}
       <div className="bg-white border-b border-gray-100">
-        <div className="container">
+        <div className="container max-w-[1400px] mx-auto px-6">
           <div className="flex gap-8 py-3 text-sm font-medium overflow-x-auto">
             {NAV_LINKS.map(({ to, label }) => (
               <NavLink
@@ -358,11 +359,11 @@ export default function Header() {
 
       {/* 모바일 메뉴 */}
       <div
-        className={`sm:hidden bg-white border-b border-gray-200 transition-all duration-300 overflow-hidden ${
+        className={`lg:hidden bg-white border-b border-gray-200 transition-all duration-300 overflow-hidden ${
           mobileMenuOpen ? "max-h-[600px]" : "max-h-0"
         }`}
       >
-        <div className="container py-4">
+        <div className="container max-w-[1400px] mx-auto px-6 py-4">
           {/* 등록하기 버튼 */}
           <button
             onClick={() => {
