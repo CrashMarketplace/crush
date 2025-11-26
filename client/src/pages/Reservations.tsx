@@ -2,17 +2,24 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../utils/apiConfig";
+import PaymentModal from "../components/PaymentModal";
+import ReviewModal from "../components/ReviewModal";
 
 type Reservation = {
   _id: string;
   product: { _id: string; title: string; price: number; images: string[] };
   buyer: { _id?: string; userId: string; displayName: string };
   seller: { _id?: string; userId: string; displayName: string };
-  status: "pending" | "confirmed" | "cancelled" | "completed";
+  status: "pending" | "confirmed" | "cancelled" | "completed" | "payment_pending" | "payment_completed";
   meetingLocation: string;
   meetingTime?: string;
   notes: string;
   createdAt: string;
+  paymentRequired: boolean;
+  paymentAmount: number;
+  paymentStatus: string;
+  buyerReviewed: boolean;
+  sellerReviewed: boolean;
 };
 
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -22,6 +29,9 @@ export default function Reservations() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
 
   usePageTitle("예약 내역", "내 예약 목록을 확인하고 관리하세요.");
 
@@ -74,9 +84,23 @@ export default function Reservations() {
         return "취소됨";
       case "completed":
         return "완료";
+      case "payment_pending":
+        return "결제 대기";
+      case "payment_completed":
+        return "결제 완료";
       default:
         return status;
     }
+  };
+
+  const openPaymentModal = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setShowPaymentModal(true);
+  };
+
+  const openReviewModal = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setShowReviewModal(true);
   };
 
   if (loading) {
@@ -181,6 +205,14 @@ export default function Reservations() {
                       </button>
                     </>
                   )}
+                  {isBuyer && r.status === "confirmed" && (
+                    <button
+                      onClick={() => openPaymentModal(r)}
+                      className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                    >
+                      💳 결제하기
+                    </button>
+                  )}
                   {isSeller && r.status === "confirmed" && (
                     <button
                       onClick={() => updateStatus(r._id, "completed")}
@@ -188,6 +220,26 @@ export default function Reservations() {
                     >
                       완료
                     </button>
+                  )}
+                  {r.status === "completed" && (
+                    <>
+                      {isBuyer && !r.buyerReviewed && (
+                        <button
+                          onClick={() => openReviewModal(r)}
+                          className="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                        >
+                          ⭐ 리뷰 작성
+                        </button>
+                      )}
+                      {isSeller && !r.sellerReviewed && (
+                        <button
+                          onClick={() => openReviewModal(r)}
+                          className="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                        >
+                          ⭐ 리뷰 작성
+                        </button>
+                      )}
+                    </>
                   )}
                   {isBuyer && r.status === "pending" && (
                     <button
@@ -203,6 +255,42 @@ export default function Reservations() {
           );
           })}
         </div>
+      )}
+
+      {/* 결제 모달 */}
+      {showPaymentModal && selectedReservation && (
+        <PaymentModal
+          reservationId={selectedReservation._id}
+          productName={selectedReservation.product.title}
+          amount={selectedReservation.product.price}
+          sellerName={selectedReservation.seller.displayName || selectedReservation.seller.userId}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedReservation(null);
+          }}
+          onSuccess={() => {
+            loadReservations();
+          }}
+        />
+      )}
+
+      {/* 리뷰 모달 */}
+      {showReviewModal && selectedReservation && (
+        <ReviewModal
+          reservationId={selectedReservation._id}
+          revieweeName={
+            user && String(selectedReservation.buyer._id || selectedReservation.buyer.userId) === String(user.id)
+              ? selectedReservation.seller.displayName || selectedReservation.seller.userId
+              : selectedReservation.buyer.displayName || selectedReservation.buyer.userId
+          }
+          onClose={() => {
+            setShowReviewModal(false);
+            setSelectedReservation(null);
+          }}
+          onSubmit={() => {
+            loadReservations();
+          }}
+        />
       )}
     </div>
   );
