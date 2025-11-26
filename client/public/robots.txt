@@ -7,4 +7,4 @@ Disallow: /admin
 Disallow: /api/
 
 # Sitemap
-Sitemap: https://bilidamarket.com/sitemap.xml
+Sitemap: https://crush-two-flame.vercel.app/sitemap.xml
