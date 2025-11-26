@@ -6,20 +6,39 @@ import webpush from "web-push";
 
 const router = Router();
 
-// VAPID 키 설정 (환경 변수에서 가져오거나 생성)
-const VAPID_PUBLIC_KEY =
-  process.env.VAPID_PUBLIC_KEY ||
-  "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBroTwJJGEGgOhVGJqhA";
-const VAPID_PRIVATE_KEY =
-  process.env.VAPID_PRIVATE_KEY ||
-  "UUxEUExBQ0VIT0xERVJfUFJJVkFURV9LRVlfRk9SX0RFVg";
+// VAPID 키 설정 (환경 변수에서 가져오기)
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
 
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(
-    "mailto:admin@bilida.com",
-    VAPID_PUBLIC_KEY,
-    VAPID_PRIVATE_KEY
-  );
+let pushEnabled = false;
+
+// VAPID 키 유효성 검사 함수
+function isValidVapidKey(key: string): boolean {
+  // Base64 URL-safe 형식 확인
+  if (!key || key.length < 40) return false;
+  // 플레이스홀더 키 제외
+  if (key.includes("PLACEHOLDER") || key.includes("EXAMPLE")) return false;
+  return true;
+}
+
+// VAPID 키가 올바르게 설정되어 있으면 웹 푸시 활성화
+if (isValidVapidKey(VAPID_PUBLIC_KEY) && isValidVapidKey(VAPID_PRIVATE_KEY)) {
+  try {
+    webpush.setVapidDetails(
+      "mailto:admin@bilida.com",
+      VAPID_PUBLIC_KEY,
+      VAPID_PRIVATE_KEY
+    );
+    pushEnabled = true;
+    console.log("✅ 웹 푸시 알림 활성화됨");
+  } catch (error) {
+    console.warn("⚠️ VAPID 키 설정 실패. 푸시 알림 비활성화");
+    console.warn("   Railway 환경 변수에서 VAPID_PUBLIC_KEY와 VAPID_PRIVATE_KEY를 삭제하거나");
+    console.warn("   npm run generate-vapid 명령으로 새 키를 생성하여 교체하세요");
+  }
+} else {
+  console.warn("⚠️ VAPID 키가 설정되지 않았거나 유효하지 않음. 푸시 알림 비활성화");
+  console.warn("   npm run generate-vapid 명령으로 키를 생성하고 .env에 추가하세요");
 }
 
 // VAPID 공개 키 제공
@@ -31,6 +50,10 @@ router.get("/vapid-public-key", (_req, res) => {
 router.post("/subscribe", async (req, res) => {
   const user = readUserFromReq(req);
   if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
+
+  if (!pushEnabled) {
+    return res.status(503).json({ ok: false, error: "push_disabled" });
+  }
 
   try {
     const subscription = req.body;
@@ -57,6 +80,12 @@ export async function sendPushNotification(
   message: string,
   data?: any
 ) {
+  // 푸시 알림이 비활성화되어 있으면 스킵
+  if (!pushEnabled) {
+    console.log(`푸시 알림 비활성화됨. 알림 스킵: ${userId}`);
+    return;
+  }
+
   try {
     const subscriptions = await PushSubscription.find({ user: userId });
 

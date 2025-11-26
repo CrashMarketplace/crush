@@ -18,10 +18,30 @@ Railway와 Vercel로 배포된 중고 거래 마켓 플레이스입니다.
 - ✅ 내 예약 목록 조회
 - ✅ 예약 시 상품 상태 자동 변경
 
+### 💳 결제 시스템 (NEW!)
+- ✅ 에스크로 안전 결제
+- ✅ 결제 수단: 에스크로, 카드, 계좌이체
+- ✅ 거래 완료 시 판매자에게 자동 지급
+- ✅ 환불 시스템
+- ✅ 결제 내역 조회
+
+### ⭐ 사용자 평가 시스템 (NEW!)
+- ✅ 매너 온도 (0-100°C)
+- ✅ 신뢰 지수 (0-100점)
+- ✅ 거래 후 리뷰 작성
+- ✅ 세부 평가: 시간약속, 친절도, 의사소통, 상품상태
+- ✅ 리뷰 태그 시스템
+- ✅ 사용자별 리뷰 목록 조회
+
 ### 채팅 기능
 - ✅ 실시간 채팅 (Socket.io)
 - ✅ 상품별 채팅방 생성
 - ✅ 채팅 목록 조회
+
+### 🔔 알림 시스템
+- ✅ 웹 푸시 알림 (선택사항)
+- ✅ 알림 페이지
+- ✅ 읽지 않은 알림 배지
 
 ### 관리자 페이지
 - ✅ 모든 상품 조회 및 삭제
@@ -33,6 +53,18 @@ Railway와 Vercel로 배포된 중고 거래 마켓 플레이스입니다.
 - ✅ 회원가입 / 로그인
 - ✅ 이메일 인증
 - ✅ 프로필 관리
+
+### 📄 법적 페이지
+- ✅ 회사 소개
+- ✅ 이용약관
+- ✅ 개인정보처리방침
+
+### 🔍 SEO 최적화
+- ✅ 메타 태그 설정
+- ✅ Open Graph 태그
+- ✅ 구조화된 데이터 (JSON-LD)
+- ✅ 사이트맵
+- ✅ robots.txt
 
 ## 기술 스택
 
@@ -82,7 +114,23 @@ MONGO_URI=mongodb://...
 JWT_SECRET=your_secret
 PUBLIC_BASE_URL=http://localhost:4000
 PORT=4000
+
+# 선택사항 (푸시 알림 사용 시)
+VAPID_PUBLIC_KEY=생성된_공개키
+VAPID_PRIVATE_KEY=생성된_비밀키
 ```
+
+## 🚨 Railway 배포 오류 해결
+
+**VAPID 키 오류가 발생하는 경우:**
+
+Railway 대시보드 → Variables 탭에서 다음 변수를 **삭제**하세요:
+- `VAPID_PUBLIC_KEY`
+- `VAPID_PRIVATE_KEY`
+
+푸시 알림 없이도 모든 기능이 정상 작동합니다.
+
+자세한 내용은 [Railway 설정 가이드](../RAILWAY_SETUP.md)를 참고하세요.
 
 ## 새로 추가된 기능
 
@@ -116,6 +164,18 @@ PORT=4000
 - `GET /api/reservations/my` - 내 예약 목록
 - `PATCH /api/reservations/:id/status` - 예약 상태 변경
 
+### 💳 결제
+- `POST /api/payments` - 결제 생성 (에스크로)
+- `POST /api/payments/:id/complete` - 거래 완료 (판매자 지급)
+- `POST /api/payments/:id/refund` - 환불 요청
+- `GET /api/payments/my-payments` - 내 결제 내역
+- `GET /api/payments/:id` - 특정 결제 조회
+
+### ⭐ 리뷰
+- `POST /api/reviews` - 리뷰 작성
+- `GET /api/reviews/user/:userId` - 사용자가 받은 리뷰
+- `GET /api/reviews/reservation/:reservationId` - 예약의 리뷰
+
 ### 관리자
 - `GET /api/admin/products` - 모든 상품 조회
 - `DELETE /api/admin/products/:id` - 상품 삭제
@@ -125,3 +185,10 @@ PORT=4000
 - `DELETE /api/admin/chats/:id` - 채팅 삭제
 - `GET /api/admin/reservations` - 모든 예약 조회
 - `DELETE /api/admin/reservations/:id` - 예약 삭제
+
+## 📚 추가 문서
+
+- [결제 및 리뷰 시스템 가이드](../PAYMENT_REVIEW_GUIDE.md)
+- [관리자 가이드](../ADMIN_GUIDE.md)
+- [푸시 알림 설정](../PUSH_NOTIFICATIONS.md)
+- [SEO 최적화 가이드](../SEO_GUIDE.md)
