@@ -17,9 +17,13 @@ export default function PaymentModal({
   onClose,
   onSuccess,
 }: PaymentModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "bank_transfer" | "escrow">("escrow");
+  const [paymentMethod, setPaymentMethod] = useState<"in_person">("in_person");
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
+
+  // 플랫폼 수수료 20%
+  const platformFee = Math.round(amount * 0.2);
+  const totalAmount = amount + platformFee;
 
   const handlePayment = async () => {
     if (!agreed) {
@@ -37,18 +41,20 @@ export default function PaymentModal({
         credentials: "include",
         body: JSON.stringify({
           reservationId,
-          amount,
+          amount: totalAmount,
+          productAmount: amount,
+          platformFee,
           paymentMethod,
         }),
       });
 
       if (res.ok) {
-        alert("결제가 완료되었습니다!\n판매자가 상품을 전달하면 거래를 완료해주세요.");
+        alert("거래가 확정되었습니다!\n현장에서 판매자에게 결제해주세요.\n(상품 금액 + 플랫폼 수수료 20%)");
         onSuccess();
         onClose();
       } else {
         const data = await res.json();
-        alert(data.error || "결제에 실패했습니다");
+        alert(data.error || "거래 확정에 실패했습니다");
       }
     } catch (error) {
       console.error("결제 오류:", error);
@@ -65,77 +71,55 @@ export default function PaymentModal({
           <h2 className="text-2xl font-bold mb-4">안전 결제</h2>
 
           {/* 상품 정보 */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <div className="bg-gray-50 rounded-lg p-4 mb-4">
             <div className="text-sm text-gray-600 mb-1">상품명</div>
             <div className="font-medium mb-3">{productName}</div>
             <div className="text-sm text-gray-600 mb-1">판매자</div>
             <div className="font-medium mb-3">{sellerName}</div>
-            <div className="text-sm text-gray-600 mb-1">결제 금액</div>
-            <div className="text-2xl font-bold text-blue-600">
-              {amount.toLocaleString()}원
+            
+            <div className="border-t pt-3 mt-3 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">상품 금액</span>
+                <span className="font-medium">{amount.toLocaleString()}원</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">플랫폼 수수료 (20%)</span>
+                <span className="font-medium text-orange-600">+{platformFee.toLocaleString()}원</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span className="font-medium">총 결제 금액</span>
+                <span className="text-2xl font-bold text-blue-600">
+                  {totalAmount.toLocaleString()}원
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* 에스크로 안내 */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          {/* 현장 결제 안내 */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <div className="flex items-start gap-2">
-              <span className="text-xl">🔒</span>
+              <span className="text-xl">💰</span>
               <div className="text-sm">
-                <div className="font-medium text-blue-900 mb-1">안전거래 보호</div>
-                <div className="text-blue-700">
-                  결제 금액은 에스크로에 안전하게 보관되며, 거래 완료 후 판매자에게 전달됩니다.
-                  문제 발생 시 환불이 가능합니다.
+                <div className="font-medium text-yellow-900 mb-1">현장 결제 방식</div>
+                <div className="text-yellow-700">
+                  판매자와 만나서 상품을 확인한 후 현금 또는 계좌이체로 결제해주세요.
+                  플랫폼 수수료 20%가 포함된 금액입니다.
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 결제 수단 선택 */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-3">결제 수단</label>
-            <div className="space-y-2">
-              <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="escrow"
-                  checked={paymentMethod === "escrow"}
-                  onChange={(e) => setPaymentMethod(e.target.value as any)}
-                  className="w-4 h-4"
-                />
-                <div>
-                  <div className="font-medium">에스크로 결제</div>
-                  <div className="text-sm text-gray-600">안전거래 보호</div>
+          {/* 수수료 안내 */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-2">
+              <span className="text-xl">ℹ️</span>
+              <div className="text-sm">
+                <div className="font-medium text-blue-900 mb-1">플랫폼 수수료 안내</div>
+                <div className="text-blue-700">
+                  수수료는 안전한 거래 환경 제공 및 BILIDA 플랫폼 운영에 사용됩니다.
+                  거래 완료 후 판매자가 수수료를 제외한 금액을 받게 됩니다.
                 </div>
-              </label>
-              <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="card"
-                  checked={paymentMethod === "card"}
-                  onChange={(e) => setPaymentMethod(e.target.value as any)}
-                  className="w-4 h-4"
-                />
-                <div>
-                  <div className="font-medium">신용/체크카드</div>
-                  <div className="text-sm text-gray-600">즉시 결제</div>
-                </div>
-              </label>
-              <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="bank_transfer"
-                  checked={paymentMethod === "bank_transfer"}
-                  onChange={(e) => setPaymentMethod(e.target.value as any)}
-                  className="w-4 h-4"
-                />
-                <div>
-                  <div className="font-medium">계좌이체</div>
-                  <div className="text-sm text-gray-600">가상계좌 발급</div>
-                </div>
-              </label>
+              </div>
             </div>
           </div>
 
@@ -148,7 +132,7 @@ export default function PaymentModal({
               className="mt-1"
             />
             <span className="text-sm text-gray-700">
-              안전거래 이용약관 및 개인정보 처리방침에 동의합니다
+              현장 결제 방식 및 플랫폼 수수료 정책에 동의합니다
             </span>
           </label>
 
@@ -166,7 +150,7 @@ export default function PaymentModal({
               className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
               disabled={loading || !agreed}
             >
-              {loading ? "처리 중..." : `${amount.toLocaleString()}원 결제`}
+              {loading ? "처리 중..." : "거래 확정"}
             </button>
           </div>
         </div>
