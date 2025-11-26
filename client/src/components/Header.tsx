@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import logoImage from "../assets/Group 88.png";
+import { API_BASE } from "../utils/apiConfig";
 
 const NAV_LINKS = [
   { to: "/feed/recommend", label: "추천" },
@@ -9,6 +10,28 @@ const NAV_LINKS = [
   { to: "/feed/hot", label: "인기" },
   { to: "/feed/new", label: "최신" },
 ] as const;
+
+// 이미지 URL 변환 함수
+function safeFixImageUrl(url?: string) {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("blob:")) return url;
+
+  const BACKUP_API_URL = "https://crush-production.up.railway.app";
+  let fixed = url;
+  const targetBase = API_BASE || BACKUP_API_URL;
+
+  if (fixed.includes("localhost:4000") || fixed.includes("127.0.0.1:4000")) {
+    fixed = fixed
+      .replace("http://localhost:4000", targetBase)
+      .replace("http://127.0.0.1:4000", targetBase);
+  }
+
+  if (!fixed.startsWith("http")) {
+    fixed = `${targetBase}${fixed.startsWith("/") ? "" : "/"}${fixed}`;
+  }
+  
+  return fixed;
+}
 
 export default function Header() {
   const navigate = useNavigate();
@@ -228,8 +251,19 @@ export default function Header() {
                       onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                       className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
                     >
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                        {(user.displayName || user.userId).charAt(0).toUpperCase()}
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold overflow-hidden">
+                        {user.avatarUrl ? (
+                          <img
+                            src={safeFixImageUrl(user.avatarUrl)}
+                            alt={`${user.displayName || user.userId}님의 프로필`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          (user.displayName || user.userId).charAt(0).toUpperCase()
+                        )}
                       </div>
                       <svg className={`w-4 h-4 text-gray-600 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
