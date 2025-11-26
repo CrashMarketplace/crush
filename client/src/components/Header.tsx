@@ -76,18 +76,16 @@ export default function Header() {
       return (
         <>
           <span
-            className={`text-sm text-gray-700 ${
-              variant === "mobile" ? "" : "whitespace-nowrap"
+            className={`text-gray-700 font-medium ${
+              variant === "mobile" ? "text-base" : "text-sm whitespace-nowrap"
             }`}
           >
             {(user.displayName || user.userId) + " 님"}
           </span>
           <button
             onClick={() => navigate("/mypage")}
-            className={`rounded border border-gray-300 hover:bg-gray-100 ${
-              variant === "mobile"
-                ? "px-4 py-2 text-base"
-                : "px-3 py-1 text-sm"
+            className={`text-gray-700 hover:text-blue-600 transition-colors ${
+              variant === "mobile" ? "text-base text-left" : "text-sm"
             }`}
             title="마이페이지로 이동"
           >
@@ -95,10 +93,8 @@ export default function Header() {
           </button>
           <button
             onClick={() => navigate("/chats")}
-            className={`rounded border border-gray-300 hover:bg-gray-100 ${
-              variant === "mobile"
-                ? "px-4 py-2 text-base"
-                : "px-3 py-1 text-sm"
+            className={`text-gray-700 hover:text-blue-600 transition-colors ${
+              variant === "mobile" ? "text-base text-left" : "text-sm"
             }`}
             title="채팅으로 이동"
           >
@@ -106,10 +102,8 @@ export default function Header() {
           </button>
           <button
             onClick={() => navigate("/reservations")}
-            className={`rounded border border-gray-300 hover:bg-gray-100 ${
-              variant === "mobile"
-                ? "px-4 py-2 text-base"
-                : "px-3 py-1 text-sm"
+            className={`text-gray-700 hover:text-blue-600 transition-colors ${
+              variant === "mobile" ? "text-base text-left" : "text-sm"
             }`}
             title="예약 내역"
           >
@@ -117,21 +111,17 @@ export default function Header() {
           </button>
           <button
             onClick={() => navigate("/payments")}
-            className={`rounded border border-gray-300 hover:bg-gray-100 ${
-              variant === "mobile"
-                ? "px-4 py-2 text-base"
-                : "px-3 py-1 text-sm"
+            className={`text-gray-700 hover:text-blue-600 transition-colors ${
+              variant === "mobile" ? "text-base text-left" : "text-sm"
             }`}
             title="결제 내역"
           >
-            💳 결제
+            결제
           </button>
           <button
             onClick={() => navigate("/notifications")}
-            className={`relative rounded border border-gray-300 hover:bg-gray-100 ${
-              variant === "mobile"
-                ? "px-4 py-2 text-base"
-                : "px-3 py-1 text-sm"
+            className={`relative text-gray-700 hover:text-blue-600 transition-colors ${
+              variant === "mobile" ? "text-base text-left" : "text-sm"
             }`}
             title="알림"
           >
@@ -145,10 +135,8 @@ export default function Header() {
           {user.isAdmin && (
             <button
               onClick={() => navigate("/admin")}
-              className={`rounded border border-gray-300 hover:bg-gray-100 ${
-                variant === "mobile"
-                  ? "px-4 py-2 text-base"
-                  : "px-3 py-1 text-sm"
+              className={`text-gray-700 hover:text-blue-600 transition-colors ${
+                variant === "mobile" ? "text-base text-left" : "text-sm"
               }`}
               title="관리자 페이지"
             >
@@ -157,10 +145,8 @@ export default function Header() {
           )}
           <button
             onClick={logout}
-            className={`text-white bg-red-500 rounded hover:bg-red-600 ${
-              variant === "mobile"
-                ? "px-4 py-2 text-base"
-                : "px-3 py-1 text-sm"
+            className={`text-red-600 hover:text-red-700 font-medium transition-colors ${
+              variant === "mobile" ? "text-base text-left" : "text-sm"
             }`}
           >
             로그아웃
@@ -173,16 +159,16 @@ export default function Header() {
       <>
         <button
           onClick={() => navigate("/login")}
-          className={`rounded border border-gray-300 hover:bg-gray-100 ${
-            variant === "mobile" ? "px-4 py-2 text-base" : "px-3 py-1 text-sm"
+          className={`text-gray-700 hover:text-blue-600 transition-colors ${
+            variant === "mobile" ? "text-base text-left" : "text-sm"
           }`}
         >
           로그인
         </button>
         <button
           onClick={() => navigate("/signup")}
-          className={`text-white rounded bg-neutral-900 hover:opacity-90 ${
-            variant === "mobile" ? "px-4 py-2 text-base" : "px-3 py-1 text-sm"
+          className={`text-blue-600 hover:text-blue-700 font-medium transition-colors ${
+            variant === "mobile" ? "text-base text-left" : "text-sm"
           }`}
         >
           회원가입
@@ -303,7 +289,7 @@ export default function Header() {
               </NavLink>
             ))}
           </div>
-          <div className="pt-2 border-t border-gray-200 flex flex-col gap-2">
+          <div className="pt-2 border-t border-gray-200 flex flex-col gap-3">
             {renderAuthActions("mobile")}
           </div>
         </div>
