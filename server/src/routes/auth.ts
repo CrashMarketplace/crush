@@ -319,4 +319,27 @@ router.post("/logout", (_req, res) => {
   return res.json({ ok: true });
 });
 
+/* 회원 탈퇴 */
+router.delete("/delete-account", async (req, res) => {
+  const session = readUserFromReq(req);
+  if (!session) return res.status(401).json({ ok: false, error: "unauthorized" });
+
+  try {
+    const user = await User.findById(session.id);
+    if (!user) return res.status(401).json({ ok: false, error: "unauthorized" });
+
+    // 사용자 삭제
+    await User.deleteOne({ _id: session.id });
+
+    // 쿠키 삭제
+    clearAuthCookie(res);
+
+    console.log(`✅ 회원 탈퇴 완료: ${user.userId} (${user.email})`);
+    return res.json({ ok: true, message: "회원 탈퇴가 완료되었습니다." });
+  } catch (e: any) {
+    console.error("회원 탈퇴 에러:", e);
+    return res.status(500).json({ ok: false, error: e?.message || "회원 탈퇴 중 오류가 발생했습니다." });
+  }
+});
+
 export default router;
