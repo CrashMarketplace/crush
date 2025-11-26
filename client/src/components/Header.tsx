@@ -104,6 +104,18 @@ export default function Header() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => { navigate("/reservations"); setMobileMenuOpen(false); }}
+            className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+          >
+            예약 내역
+          </button>
+          <button
+            onClick={() => { navigate("/payments"); setMobileMenuOpen(false); }}
+            className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+          >
+            결제 내역
+          </button>
           {user.userId === "junsu" && (
             <button
               onClick={() => { navigate("/admin"); setMobileMenuOpen(false); }}
@@ -236,6 +248,18 @@ export default function Header() {
                           className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                           마이페이지
+                        </button>
+                        <button
+                          onClick={() => { navigate("/reservations"); setProfileDropdownOpen(false); }}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          예약 내역
+                        </button>
+                        <button
+                          onClick={() => { navigate("/payments"); setProfileDropdownOpen(false); }}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          결제 내역
                         </button>
                         {user.userId === "junsu" && (
                           <button
