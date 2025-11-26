@@ -20,7 +20,7 @@ const ReservationSchema = new Schema(
     paymentAmount: { type: Number, default: 0 },
     paymentStatus: {
       type: String,
-      enum: ["none", "pending", "completed", "refunded"],
+      enum: ["none", "pending", "completed", "refunded", "cancelled"],
       default: "none",
     },
     paymentMethod: { type: String, default: "" }, // 결제 수단

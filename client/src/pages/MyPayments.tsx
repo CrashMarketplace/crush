@@ -45,7 +45,7 @@ export default function MyPayments() {
   const getStatusText = (status: string) => {
     switch (status) {
       case "pending":
-        return { text: "결제 대기", color: "text-yellow-600 bg-yellow-50" };
+        return { text: "현장 결제 대기", color: "text-yellow-600 bg-yellow-50" };
       case "held":
         return { text: "에스크로 보관", color: "text-blue-600 bg-blue-50" };
       case "completed":
@@ -61,6 +61,8 @@ export default function MyPayments() {
 
   const getPaymentMethodText = (method: string) => {
     switch (method) {
+      case "in_person":
+        return "현장 결제";
       case "card":
         return "신용/체크카드";
       case "bank_transfer":
@@ -73,7 +75,7 @@ export default function MyPayments() {
   };
 
   const handleCompletePayment = async (paymentId: string) => {
-    if (!confirm("거래를 완료하시겠습니까?\n판매자에게 결제 금액이 전달됩니다.")) {
+    if (!confirm("현장에서 결제를 완료하셨나요?\n거래를 완료하시겠습니까?")) {
       return;
     }
 
@@ -84,7 +86,7 @@ export default function MyPayments() {
       });
 
       if (res.ok) {
-        alert("거래가 완료되었습니다!");
+        alert("거래가 완료되었습니다!\n리뷰를 작성해주세요.");
         window.location.reload();
       } else {
         const data = await res.json();
@@ -97,7 +99,7 @@ export default function MyPayments() {
   };
 
   const handleRefund = async (paymentId: string) => {
-    const reason = prompt("환불 사유를 입력해주세요:");
+    const reason = prompt("거래 취소 사유를 입력해주세요:");
     if (!reason) return;
 
     try {
@@ -109,15 +111,15 @@ export default function MyPayments() {
       });
 
       if (res.ok) {
-        alert("환불이 완료되었습니다!");
+        alert("거래가 취소되었습니다!");
         window.location.reload();
       } else {
         const data = await res.json();
-        alert(data.error || "환불에 실패했습니다");
+        alert(data.error || "거래 취소에 실패했습니다");
       }
     } catch (error) {
-      console.error("환불 오류:", error);
-      alert("환불에 실패했습니다");
+      console.error("거래 취소 오류:", error);
+      alert("거래 취소에 실패했습니다");
     }
   };
 
@@ -175,40 +177,46 @@ export default function MyPayments() {
                     <span className="text-gray-600">판매자</span>
                     <span className="font-medium">{payment.seller.displayName}</span>
                   </div>
-                  {payment.escrowHeldAt && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">에스크로 보관</span>
-                      <span>{new Date(payment.escrowHeldAt).toLocaleString()}</span>
-                    </div>
+                  {(payment as any).productAmount && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">상품 금액</span>
+                        <span>{((payment as any).productAmount).toLocaleString()}원</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">플랫폼 수수료 (20%)</span>
+                        <span className="text-orange-600">+{((payment as any).platformFee).toLocaleString()}원</span>
+                      </div>
+                    </>
                   )}
-                  {payment.escrowReleasedAt && (
+                  {(payment as any).paidAt && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">판매자 지급</span>
-                      <span>{new Date(payment.escrowReleasedAt).toLocaleString()}</span>
+                      <span className="text-gray-600">결제 완료</span>
+                      <span>{new Date((payment as any).paidAt).toLocaleString()}</span>
                     </div>
                   )}
                   {payment.refundedAt && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">환불 완료</span>
+                      <span className="text-gray-600">취소 완료</span>
                       <span>{new Date(payment.refundedAt).toLocaleString()}</span>
                     </div>
                   )}
                 </div>
 
                 {/* 액션 버튼 */}
-                {payment.status === "held" && (
+                {payment.status === "pending" && (
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={() => handleCompletePayment(payment._id)}
                       className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
                     >
-                      거래 완료
+                      현장 결제 완료
                     </button>
                     <button
                       onClick={() => handleRefund(payment._id)}
                       className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
                     >
-                      환불 요청
+                      거래 취소
                     </button>
                   </div>
                 )}
