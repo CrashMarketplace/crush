@@ -17,6 +17,13 @@ const UserSchema = new Schema(
     bio: { type: String, default: "" },
     isAdmin: { type: Boolean, default: false },
     isBanned: { type: Boolean, default: false },
+    // 사용자 평가 시스템
+    mannerTemperature: { type: Number, default: 36.5, min: 0, max: 100 }, // 매너 온도
+    trustScore: { type: Number, default: 0, min: 0, max: 100 }, // 신뢰 지수
+    totalReviews: { type: Number, default: 0 }, // 총 리뷰 수
+    positiveReviews: { type: Number, default: 0 }, // 긍정 리뷰 수
+    negativeReviews: { type: Number, default: 0 }, // 부정 리뷰 수
+    completedTransactions: { type: Number, default: 0 }, // 완료된 거래 수
   },
   { timestamps: true }
 );

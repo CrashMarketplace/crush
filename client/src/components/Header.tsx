@@ -116,6 +116,17 @@ export default function Header() {
             예약
           </button>
           <button
+            onClick={() => navigate("/payments")}
+            className={`rounded border border-gray-300 hover:bg-gray-100 ${
+              variant === "mobile"
+                ? "px-4 py-2 text-base"
+                : "px-3 py-1 text-sm"
+            }`}
+            title="결제 내역"
+          >
+            💳 결제
+          </button>
+          <button
             onClick={() => navigate("/notifications")}
             className={`relative rounded border border-gray-300 hover:bg-gray-100 ${
               variant === "mobile"

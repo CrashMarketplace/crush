@@ -23,6 +23,8 @@ import chatsRouter from "./routes/chats";
 import adminRouter from "./routes/admin";
 import reservationsRouter from "./routes/reservations";
 import notificationsRouter from "./routes/notifications";
+import reviewsRouter from "./routes/reviews";
+import paymentsRouter from "./routes/payments";
 import { initSocketServer } from "./realtime/socketManager";
 import uploadsRouter from "./routes/uploads";
 
@@ -194,6 +196,8 @@ app.use("/api/chats", chatsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/reservations", reservationsRouter);
 app.use("/api/notifications", notificationsRouter);
+app.use("/api/reviews", reviewsRouter);
+app.use("/api/payments", paymentsRouter);
 app.use("/api/uploads", uploadsRouter);
 app.use("/api/upload", uploadsRouter);
 
