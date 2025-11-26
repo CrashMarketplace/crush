@@ -17,7 +17,7 @@ export default function PaymentModal({
   onClose,
   onSuccess,
 }: PaymentModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState<"in_person">("in_person");
+  const paymentMethod = "in_person"; // 현장 결제 고정
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
