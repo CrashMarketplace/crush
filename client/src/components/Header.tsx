@@ -157,7 +157,7 @@ export default function Header() {
       {/* 메인 헤더 */}
       <div className="border-b border-gray-200">
         <div className="container max-w-[1400px] mx-auto px-6">
-          <div className="flex items-center py-6 gap-6">
+          <div className="flex items-center justify-between py-6 gap-6">
             {/* 로고 */}
             <button onClick={() => navigate("/")} className="flex items-center flex-shrink-0">
               <img
@@ -168,13 +168,12 @@ export default function Header() {
               />
             </button>
 
-            {/* 검색창 (데스크톱) - 중앙에 넓게 */}
+            {/* 검색창 (데스크톱) - 중앙 배치 */}
             <form
               onSubmit={onSubmitSearch}
-              className="hidden lg:flex flex-1 max-w-3xl"
-              style={{ minWidth: '500px' }}
+              className="hidden lg:flex flex-1 justify-center mx-8"
             >
-              <div className="relative w-full">
+              <div className="relative w-full max-w-2xl">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -191,7 +190,7 @@ export default function Header() {
             </form>
 
             {/* 우측 메뉴 (데스크톱) */}
-            <div className="hidden lg:flex items-center gap-5 flex-shrink-0 ml-auto">
+            <div className="hidden lg:flex items-center gap-5 flex-shrink-0">
               {loading ? (
                 <span className="text-sm text-gray-500">확인 중...</span>
               ) : user ? (
