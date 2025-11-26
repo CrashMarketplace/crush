@@ -73,56 +73,103 @@ export default function Header() {
     }
 
     if (user) {
+      if (variant === "mobile") {
+        return (
+          <>
+            <div className="px-4 py-3 bg-gray-50 rounded-lg mb-2">
+              <span className="text-sm text-gray-600">안녕하세요,</span>
+              <div className="font-semibold text-gray-900">{user.displayName || user.userId} 님</div>
+            </div>
+            <button
+              onClick={() => { navigate("/mypage"); setMobileMenuOpen(false); }}
+              className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              마이페이지
+            </button>
+            <button
+              onClick={() => { navigate("/chats"); setMobileMenuOpen(false); }}
+              className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              채팅
+            </button>
+            <button
+              onClick={() => { navigate("/reservations"); setMobileMenuOpen(false); }}
+              className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              예약
+            </button>
+            <button
+              onClick={() => { navigate("/payments"); setMobileMenuOpen(false); }}
+              className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              결제
+            </button>
+            <button
+              onClick={() => { navigate("/notifications"); setMobileMenuOpen(false); }}
+              className="relative py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              알림
+              {unreadCount > 0 && (
+                <span className="absolute top-3 right-4 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+            {user.isAdmin && (
+              <button
+                onClick={() => { navigate("/admin"); setMobileMenuOpen(false); }}
+                className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                관리자
+              </button>
+            )}
+            <button
+              onClick={() => { logout(); setMobileMenuOpen(false); }}
+              className="py-3 px-4 text-left text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
+            >
+              로그아웃
+            </button>
+          </>
+        );
+      }
+
+      // Desktop
       return (
         <>
-          <span
-            className={`text-gray-700 font-medium ${
-              variant === "mobile" ? "text-base" : "text-sm whitespace-nowrap"
-            }`}
-          >
+          <span className="text-sm text-gray-700 font-medium whitespace-nowrap">
             {(user.displayName || user.userId) + " 님"}
           </span>
           <button
             onClick={() => navigate("/mypage")}
-            className={`text-gray-700 hover:text-blue-600 transition-colors ${
-              variant === "mobile" ? "text-base text-left" : "text-sm"
-            }`}
+            className="text-sm text-gray-700 hover:text-blue-600 transition-colors"
             title="마이페이지로 이동"
           >
             마이페이지
           </button>
           <button
             onClick={() => navigate("/chats")}
-            className={`text-gray-700 hover:text-blue-600 transition-colors ${
-              variant === "mobile" ? "text-base text-left" : "text-sm"
-            }`}
+            className="text-sm text-gray-700 hover:text-blue-600 transition-colors"
             title="채팅으로 이동"
           >
             채팅
           </button>
           <button
             onClick={() => navigate("/reservations")}
-            className={`text-gray-700 hover:text-blue-600 transition-colors ${
-              variant === "mobile" ? "text-base text-left" : "text-sm"
-            }`}
+            className="text-sm text-gray-700 hover:text-blue-600 transition-colors"
             title="예약 내역"
           >
             예약
           </button>
           <button
             onClick={() => navigate("/payments")}
-            className={`text-gray-700 hover:text-blue-600 transition-colors ${
-              variant === "mobile" ? "text-base text-left" : "text-sm"
-            }`}
+            className="text-sm text-gray-700 hover:text-blue-600 transition-colors"
             title="결제 내역"
           >
             결제
           </button>
           <button
             onClick={() => navigate("/notifications")}
-            className={`relative text-gray-700 hover:text-blue-600 transition-colors ${
-              variant === "mobile" ? "text-base text-left" : "text-sm"
-            }`}
+            className="relative text-sm text-gray-700 hover:text-blue-600 transition-colors"
             title="알림"
           >
             알림
@@ -135,9 +182,7 @@ export default function Header() {
           {user.isAdmin && (
             <button
               onClick={() => navigate("/admin")}
-              className={`text-gray-700 hover:text-blue-600 transition-colors ${
-                variant === "mobile" ? "text-base text-left" : "text-sm"
-              }`}
+              className="text-sm text-gray-700 hover:text-blue-600 transition-colors"
               title="관리자 페이지"
             >
               관리자
@@ -145,11 +190,28 @@ export default function Header() {
           )}
           <button
             onClick={logout}
-            className={`text-red-600 hover:text-red-700 font-medium transition-colors ${
-              variant === "mobile" ? "text-base text-left" : "text-sm"
-            }`}
+            className="text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
           >
             로그아웃
+          </button>
+        </>
+      );
+    }
+
+    if (variant === "mobile") {
+      return (
+        <>
+          <button
+            onClick={() => { navigate("/login"); setMobileMenuOpen(false); }}
+            className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+          >
+            로그인
+          </button>
+          <button
+            onClick={() => { navigate("/signup"); setMobileMenuOpen(false); }}
+            className="py-3 px-4 text-left text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+          >
+            회원가입
           </button>
         </>
       );
@@ -159,17 +221,13 @@ export default function Header() {
       <>
         <button
           onClick={() => navigate("/login")}
-          className={`text-gray-700 hover:text-blue-600 transition-colors ${
-            variant === "mobile" ? "text-base text-left" : "text-sm"
-          }`}
+          className="text-sm text-gray-700 hover:text-blue-600 transition-colors"
         >
           로그인
         </button>
         <button
           onClick={() => navigate("/signup")}
-          className={`text-blue-600 hover:text-blue-700 font-medium transition-colors ${
-            variant === "mobile" ? "text-base text-left" : "text-sm"
-          }`}
+          className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
         >
           회원가입
         </button>
@@ -178,84 +236,106 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm">
-      <div className="container flex flex-wrap items-center gap-3 py-3">
-        <div className="flex items-center justify-between w-full sm:w-auto">
-          <button onClick={() => navigate("/")} className="flex items-center">
-            <img
-              src={logoImage}
-              alt="BILIDA"
-              className="w-auto h-10 sm:h-12"
-              loading="lazy"
-            />
-          </button>
-
-          <div className="flex items-center gap-2 sm:hidden">
-            <button
-              onClick={goSell}
-              className="px-3 py-1.5 text-sm font-semibold text-white rounded-lg bg-[#0093B7] hover:opacity-90"
-              title={user ? "상품 등록하기" : "로그인하고 상품 등록하기"}
-            >
-              등록하기
+    <header className="sticky top-0 z-30 bg-white shadow-md">
+      {/* 메인 헤더 */}
+      <div className="border-b border-gray-200">
+        <div className="container">
+          <div className="flex items-center justify-between py-4 gap-4">
+            {/* 로고 */}
+            <button onClick={() => navigate("/")} className="flex items-center flex-shrink-0">
+              <img
+                src={logoImage}
+                alt="BILIDA"
+                className="h-14 w-auto sm:h-16"
+                loading="lazy"
+              />
             </button>
+
+            {/* 검색창 (데스크톱) */}
+            <form
+              onSubmit={onSubmitSearch}
+              className="hidden sm:flex flex-1 max-w-2xl mx-6"
+            >
+              <div className="relative w-full">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="어떤 상품을 찾으시나요?"
+                  className="w-full pl-12 pr-4 py-3.5 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all outline-none"
+                />
+              </div>
+            </form>
+
+            {/* 우측 메뉴 (데스크톱) */}
+            <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
+              <button
+                onClick={goSell}
+                className="px-6 py-3 text-sm font-semibold text-white rounded-lg bg-[#0093B7] hover:bg-[#007a9a] transition-colors shadow-sm"
+                title={user ? "상품 등록하기" : "로그인하고 상품 등록하기"}
+              >
+                + 등록하기
+              </button>
+              <div className="flex items-center gap-4 pl-4 border-l border-gray-300">
+                {renderAuthActions("desktop")}
+              </div>
+            </div>
+
+            {/* 모바일 메뉴 버튼 */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300"
+              className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100"
               aria-label="모바일 메뉴 토글"
             >
-              {mobileMenuOpen ? "닫기" : "메뉴"}
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
             </button>
           </div>
-        </div>
 
-        {/* 검색창 */}
-        <form
-          onSubmit={onSubmitSearch}
-          className="order-3 w-full sm:order-none sm:flex-1 sm:max-w-3xl"
-        >
-          <div className="relative">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="검색어를 입력해주세요"
-              className="w-full px-5 py-3 text-sm rounded-full border border-gray-300 focus:ring-2 focus:ring-neutral-800 focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="absolute text-xs font-medium text-white rounded-full px-4 py-2 right-1.5 top-1/2 -translate-y-1/2 bg-neutral-800 hover:bg-neutral-900"
-              aria-label="검색"
-            >
-              검색
-            </button>
-          </div>
-        </form>
-
-        {/* 우측 메뉴 (데스크톱) */}
-        <div className="items-center hidden gap-2 ml-auto sm:flex">
-          <button
-            onClick={goSell}
-            className="px-4 py-2 text-sm font-semibold text-white rounded-lg bg-[#0093B7] hover:opacity-90"
-            title={user ? "상품 등록하기" : "로그인하고 상품 등록하기"}
-          >
-            등록하기
-          </button>
-          {renderAuthActions("desktop")}
+          {/* 검색창 (모바일) */}
+          <form onSubmit={onSubmitSearch} className="sm:hidden pb-4">
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="어떤 상품을 찾으시나요?"
+                className="w-full pl-12 pr-4 py-3 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all outline-none"
+              />
+            </div>
+          </form>
         </div>
       </div>
 
-      {/* 하단 카테고리 메뉴 */}
-      <div className="border-t border-gray-100 bg-white">
+      {/* 네비게이션 메뉴 */}
+      <div className="bg-white border-b border-gray-100">
         <div className="container">
-          <div className="flex gap-6 py-2 text-sm text-[#001C6D] overflow-x-auto">
+          <div className="flex gap-8 py-3 text-sm font-medium overflow-x-auto">
             {NAV_LINKS.map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  `pb-1 border-b-2 border-transparent hover:border-[#001C6D] hover:text-sky-600 ${
-                    isActive ? "text-sky-600 font-medium border-[#001C6D]" : ""
+                  `pb-2 border-b-2 transition-colors whitespace-nowrap ${
+                    isActive
+                      ? "text-blue-600 border-blue-600"
+                      : "text-gray-600 border-transparent hover:text-blue-600 hover:border-blue-300"
                   }`
                 }
               >
@@ -266,22 +346,36 @@ export default function Header() {
         </div>
       </div>
 
-      {/* 모바일 풀스크린 메뉴 */}
+      {/* 모바일 메뉴 */}
       <div
-        className={`sm:hidden border-t border-gray-100 bg-white transition-[max-height] duration-300 overflow-hidden ${
-          mobileMenuOpen ? "max-h-[480px]" : "max-h-0"
+        className={`sm:hidden bg-white border-b border-gray-200 transition-all duration-300 overflow-hidden ${
+          mobileMenuOpen ? "max-h-[600px]" : "max-h-0"
         }`}
       >
-        <div className="container flex flex-col gap-4 py-4">
-          <div className="flex flex-col gap-2 text-base text-[#001C6D]">
+        <div className="container py-4">
+          {/* 등록하기 버튼 */}
+          <button
+            onClick={() => {
+              goSell();
+              setMobileMenuOpen(false);
+            }}
+            className="w-full mb-4 px-6 py-3 text-sm font-semibold text-white rounded-lg bg-[#0093B7] hover:bg-[#007a9a] transition-colors"
+          >
+            + 등록하기
+          </button>
+
+          {/* 네비게이션 */}
+          <div className="flex flex-col gap-1 mb-4 pb-4 border-b border-gray-200">
             {NAV_LINKS.map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
                 onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) =>
-                  `py-2 border-b border-gray-100 ${
-                    isActive ? "font-semibold text-sky-600" : ""
+                  `py-3 px-4 rounded-lg transition-colors ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600 font-semibold"
+                      : "text-gray-700 hover:bg-gray-50"
                   }`
                 }
               >
@@ -289,7 +383,9 @@ export default function Header() {
               </NavLink>
             ))}
           </div>
-          <div className="pt-2 border-t border-gray-200 flex flex-col gap-3">
+
+          {/* 사용자 메뉴 */}
+          <div className="flex flex-col gap-2">
             {renderAuthActions("mobile")}
           </div>
         </div>
