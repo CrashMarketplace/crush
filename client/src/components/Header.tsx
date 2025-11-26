@@ -17,9 +17,11 @@ export default function Header() {
   const [query, setQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    setProfileDropdownOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function Header() {
     navigate(q ? `/all?q=${encodeURIComponent(q)}` : "/all");
   };
 
-  const renderAuthActions = (variant: "desktop" | "mobile") => {
+  const renderMobileAuthActions = () => {
     if (loading) {
       return (
         <span className="text-sm text-gray-500" aria-live="polite">
@@ -73,154 +75,48 @@ export default function Header() {
     }
 
     if (user) {
-      if (variant === "mobile") {
-        return (
-          <>
-            <div className="px-4 py-3 bg-gray-50 rounded-lg mb-2">
-              <span className="text-sm text-gray-600">안녕하세요,</span>
-              <div className="font-semibold text-gray-900">{user.displayName || user.userId} 님</div>
-            </div>
-            <button
-              onClick={() => { navigate("/mypage"); setMobileMenuOpen(false); }}
-              className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              마이페이지
-            </button>
-            <button
-              onClick={() => { navigate("/chats"); setMobileMenuOpen(false); }}
-              className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              채팅
-            </button>
-            <button
-              onClick={() => { navigate("/reservations"); setMobileMenuOpen(false); }}
-              className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              예약
-            </button>
-            <button
-              onClick={() => { navigate("/payments"); setMobileMenuOpen(false); }}
-              className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              결제
-            </button>
-            <button
-              onClick={() => { navigate("/notifications"); setMobileMenuOpen(false); }}
-              className="relative py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              알림
-              {unreadCount > 0 && (
-                <span className="absolute top-3 right-4 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
-            </button>
-            {user.isAdmin && (
-              <button
-                onClick={() => { navigate("/admin"); setMobileMenuOpen(false); }}
-                className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                관리자
-              </button>
-            )}
-            <button
-              onClick={() => { logout(); setMobileMenuOpen(false); }}
-              className="py-3 px-4 text-left text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
-            >
-              로그아웃
-            </button>
-          </>
-        );
-      }
-
-      // Desktop
       return (
         <>
-          <span className="text-[15px] text-gray-800 font-semibold whitespace-nowrap">
-            {(user.displayName || user.userId) + " 님"}
-          </span>
-          <div className="w-px h-4 bg-gray-300"></div>
+          <div className="px-4 py-3 bg-gray-50 rounded-lg mb-2">
+            <span className="text-sm text-gray-600">안녕하세요,</span>
+            <div className="font-semibold text-gray-900">{user.displayName || user.userId} 님</div>
+          </div>
           <button
-            onClick={() => navigate("/mypage")}
-            className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
-            title="마이페이지로 이동"
+            onClick={() => { navigate("/mypage"); setMobileMenuOpen(false); }}
+            className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
           >
             마이페이지
           </button>
-          <div className="w-px h-4 bg-gray-300"></div>
           <button
-            onClick={() => navigate("/chats")}
-            className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
-            title="채팅으로 이동"
+            onClick={() => { navigate("/chats"); setMobileMenuOpen(false); }}
+            className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
           >
             채팅
           </button>
-          <div className="w-px h-4 bg-gray-300"></div>
           <button
-            onClick={() => navigate("/reservations")}
-            className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
-            title="예약 내역"
-          >
-            예약
-          </button>
-          <div className="w-px h-4 bg-gray-300"></div>
-          <button
-            onClick={() => navigate("/payments")}
-            className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
-            title="결제 내역"
-          >
-            결제
-          </button>
-          <div className="w-px h-4 bg-gray-300"></div>
-          <button
-            onClick={() => navigate("/notifications")}
-            className="relative text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
-            title="알림"
+            onClick={() => { navigate("/notifications"); setMobileMenuOpen(false); }}
+            className="relative py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
           >
             알림
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="absolute top-3 right-4 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </button>
-          {user.isAdmin && (
-            <>
-              <div className="w-px h-4 bg-gray-300"></div>
-              <button
-                onClick={() => navigate("/admin")}
-                className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
-                title="관리자 페이지"
-              >
-                관리자
-              </button>
-            </>
+          {user.userId === "junsu" && (
+            <button
+              onClick={() => { navigate("/admin"); setMobileMenuOpen(false); }}
+              className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              관리자
+            </button>
           )}
-          <div className="w-px h-4 bg-gray-300"></div>
           <button
-            onClick={logout}
-            className="text-[15px] text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
+            onClick={() => { logout(); setMobileMenuOpen(false); }}
+            className="py-3 px-4 text-left text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
           >
             로그아웃
-          </button>
-        </>
-      );
-    }
-
-    if (variant === "mobile") {
-      return (
-        <>
-          <button
-            onClick={() => { navigate("/login"); setMobileMenuOpen(false); }}
-            className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-          >
-            로그인
-          </button>
-          <button
-            onClick={() => { navigate("/signup"); setMobileMenuOpen(false); }}
-            className="py-3 px-4 text-left text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
-          >
-            회원가입
           </button>
         </>
       );
@@ -229,15 +125,14 @@ export default function Header() {
     return (
       <>
         <button
-          onClick={() => navigate("/login")}
-          className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
+          onClick={() => { navigate("/login"); setMobileMenuOpen(false); }}
+          className="py-3 px-4 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
         >
           로그인
         </button>
-        <div className="w-px h-4 bg-gray-300"></div>
         <button
-          onClick={() => navigate("/signup")}
-          className="text-[15px] text-blue-600 hover:text-blue-700 font-semibold transition-colors whitespace-nowrap"
+          onClick={() => { navigate("/signup"); setMobileMenuOpen(false); }}
+          className="py-3 px-4 text-left text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
         >
           회원가입
         </button>
@@ -284,17 +179,106 @@ export default function Header() {
             </form>
 
             {/* 우측 메뉴 (데스크톱) */}
-            <div className="hidden lg:flex items-center gap-4 flex-shrink-0 ml-auto">
-              <button
-                onClick={goSell}
-                className="px-6 py-3.5 text-[15px] font-semibold text-white rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 transition-all shadow-md hover:shadow-lg whitespace-nowrap"
-                title={user ? "상품 등록하기" : "로그인하고 상품 등록하기"}
-              >
-                + 등록하기
-              </button>
-              <div className="flex items-center gap-4 pl-4 border-l-2 border-gray-200">
-                {renderAuthActions("desktop")}
-              </div>
+            <div className="hidden lg:flex items-center gap-5 flex-shrink-0 ml-auto">
+              {loading ? (
+                <span className="text-sm text-gray-500">확인 중...</span>
+              ) : user ? (
+                <>
+                  {/* 채팅 버튼 */}
+                  <button
+                    onClick={() => navigate("/chats")}
+                    className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
+                    title="채팅"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </button>
+
+                  {/* 알림 버튼 */}
+                  <button
+                    onClick={() => navigate("/notifications")}
+                    className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors"
+                    title="알림"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {unreadCount > 0 && (
+                      <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* 프로필 드롭다운 */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                        {(user.displayName || user.userId).charAt(0).toUpperCase()}
+                      </div>
+                      <svg className={`w-4 h-4 text-gray-600 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* 드롭다운 메뉴 */}
+                    {profileDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                        <div className="px-4 py-2 border-b border-gray-100">
+                          <p className="text-sm font-semibold text-gray-800">{user.displayName || user.userId} 님</p>
+                        </div>
+                        <button
+                          onClick={() => { navigate("/mypage"); setProfileDropdownOpen(false); }}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          마이페이지
+                        </button>
+                        {user.userId === "junsu" && (
+                          <button
+                            onClick={() => { navigate("/admin"); setProfileDropdownOpen(false); }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            관리자
+                          </button>
+                        )}
+                        <button
+                          onClick={() => { navigate("/settings"); setProfileDropdownOpen(false); }}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          회원 탈퇴
+                        </button>
+                        <div className="border-t border-gray-100 mt-1 pt-1">
+                          <button
+                            onClick={() => { logout(); setProfileDropdownOpen(false); }}
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            로그아웃
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => navigate("/login")}
+                    className="text-[15px] text-gray-700 hover:text-blue-600 transition-colors whitespace-nowrap"
+                  >
+                    로그인
+                  </button>
+                  <button
+                    onClick={() => navigate("/signup")}
+                    className="px-5 py-2.5 text-[15px] text-white font-semibold bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    회원가입
+                  </button>
+                </>
+              )}
             </div>
 
             {/* 모바일 메뉴 버튼 */}
@@ -337,7 +321,7 @@ export default function Header() {
       {/* 네비게이션 메뉴 */}
       <div className="bg-white border-b border-gray-100">
         <div className="container max-w-[1400px] mx-auto px-6">
-          <div className="flex gap-8 py-3 text-sm font-medium overflow-x-auto">
+          <div className="flex items-center gap-8 py-3 text-sm font-medium overflow-x-auto">
             {NAV_LINKS.map(({ to, label }) => (
               <NavLink
                 key={to}
@@ -353,6 +337,14 @@ export default function Header() {
                 {label}
               </NavLink>
             ))}
+            {/* 등록하기 버튼 (네비게이션 바) */}
+            <button
+              onClick={goSell}
+              className="ml-auto px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 rounded-lg transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+              title={user ? "상품 등록하기" : "로그인하고 상품 등록하기"}
+            >
+              + 등록하기
+            </button>
           </div>
         </div>
       </div>
@@ -397,7 +389,7 @@ export default function Header() {
 
           {/* 사용자 메뉴 */}
           <div className="flex flex-col gap-2">
-            {renderAuthActions("mobile")}
+            {renderMobileAuthActions()}
           </div>
         </div>
       </div>
