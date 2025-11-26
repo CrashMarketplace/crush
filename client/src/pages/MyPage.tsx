@@ -48,6 +48,7 @@ export default function MyPage() {
   const [tab, setTab] = useState<TabKey>("all");
   const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
   const [infoEditorOpen, setInfoEditorOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const handleProfileRefresh = useCallback(async () => {
     await refresh();
   }, [refresh]);
@@ -154,6 +155,12 @@ export default function MyPage() {
               >
                 사용자 정보 변경
               </button>
+              <button
+                onClick={() => setDeleteAccountOpen((prev) => !prev)}
+                className="px-3 py-1.5 text-sm rounded border border-red-300 text-red-600 bg-white hover:bg-red-50"
+              >
+                회원 탈퇴
+              </button>
             </div>
           </div>
         </div>
@@ -185,6 +192,12 @@ export default function MyPage() {
             await handleProfileRefresh();
             setInfoEditorOpen(false);
           }}
+        />
+      ) : null}
+
+      {deleteAccountOpen ? (
+        <DeleteAccountModal
+          onClose={() => setDeleteAccountOpen(false)}
         />
       ) : null}
 
@@ -698,3 +711,109 @@ function ProfileInfoEditor({
 }
 
 
+
+function DeleteAccountModal({ onClose }: { onClose: () => void }) {
+  const { logout } = useAuth();
+  const [confirmText, setConfirmText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (confirmText !== "회원탈퇴") {
+      setError("'회원탈퇴'를 정확히 입력해주세요.");
+      return;
+    }
+
+    if (!window.confirm("정말로 회원 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`${API_BASE || "https://crush-production.up.railway.app"}/api/auth/delete-account`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      
+      if (!res.ok || data?.ok === false) {
+        throw new Error(data?.error || `회원 탈퇴 실패 (HTTP ${res.status})`);
+      }
+
+      alert("회원 탈퇴가 완료되었습니다.");
+      await logout();
+      window.location.href = "/";
+    } catch (err: any) {
+      setError(err?.message || "회원 탈퇴 중 오류가 발생했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-md p-6 mx-4 bg-white rounded-2xl shadow-xl">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-red-600">회원 탈퇴</h2>
+          <button
+            onClick={onClose}
+            type="button"
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800 font-semibold mb-2">⚠️ 주의사항</p>
+            <ul className="text-xs text-red-700 space-y-1 list-disc list-inside">
+              <li>회원 탈퇴 시 모든 개인정보가 삭제됩니다.</li>
+              <li>등록한 상품, 채팅 내역이 모두 삭제됩니다.</li>
+              <li>탈퇴 후에는 복구할 수 없습니다.</li>
+            </ul>
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">
+              회원 탈퇴를 진행하려면 아래에 <span className="text-red-600 font-bold">'회원탈퇴'</span>를 입력하세요.
+            </label>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="회원탈퇴"
+              className="w-full px-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-600">{error}</p>
+          )}
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 text-sm font-semibold border rounded-lg hover:bg-gray-50"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={busy || confirmText !== "회원탈퇴"}
+              className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {busy ? "처리 중..." : "회원 탈퇴"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
