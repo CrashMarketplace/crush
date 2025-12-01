@@ -20,6 +20,7 @@ type User = {
   isBanned: boolean;
   isAdmin: boolean;
   createdAt: string;
+  lastLoginAt?: string;
 };
 
 type Chat = {
@@ -241,37 +242,62 @@ export default function Admin() {
               {users.length === 0 ? (
                 <div className="text-gray-500">사용자가 없습니다.</div>
               ) : (
-                users.map((u) => (
-                  <div
-                    key={u._id}
-                    className="card p-4 flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="font-semibold">
-                        {u.userId} {u.isAdmin && "(관리자)"}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {u.email} · {u.displayName || "이름 없음"} ·{" "}
-                        {new Date(u.createdAt).toLocaleDateString()}
-                      </div>
-                      {u.isBanned && (
-                        <span className="text-xs text-red-600 font-semibold">
-                          강퇴됨
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => toggleBan(u._id, !u.isBanned)}
-                      className={`px-3 py-1 text-sm rounded ${
-                        u.isBanned
-                          ? "bg-green-500 text-white hover:bg-green-600"
-                          : "bg-red-500 text-white hover:bg-red-600"
-                      }`}
+                users.map((u) => {
+                  const memberSince = new Date(u.createdAt);
+                  const lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt) : null;
+                  const now = new Date();
+                  
+                  // 가입 후 경과 시간 계산
+                  const daysSinceMember = Math.floor((now.getTime() - memberSince.getTime()) / (1000 * 60 * 60 * 24));
+                  
+                  // 마지막 로그인 시간 표시
+                  let lastLoginText = "로그인 기록 없음";
+                  if (lastLogin) {
+                    const minutesAgo = Math.floor((now.getTime() - lastLogin.getTime()) / (1000 * 60));
+                    if (minutesAgo < 60) {
+                      lastLoginText = `${minutesAgo}분 전`;
+                    } else if (minutesAgo < 1440) {
+                      lastLoginText = `${Math.floor(minutesAgo / 60)}시간 전`;
+                    } else {
+                      lastLoginText = `${Math.floor(minutesAgo / 1440)}일 전`;
+                    }
+                  }
+                  
+                  return (
+                    <div
+                      key={u._id}
+                      className="card p-4 flex items-center justify-between"
                     >
-                      {u.isBanned ? "강퇴 해제" : "강퇴"}
-                    </button>
-                  </div>
-                ))
+                      <div className="flex-1">
+                        <div className="font-semibold">
+                          {u.userId} {u.isAdmin && <span className="text-blue-600">(관리자)</span>}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {u.email} · {u.displayName || "이름 없음"}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          가입: {memberSince.toLocaleDateString()} ({daysSinceMember}일 전) · 
+                          마지막 로그인: {lastLoginText}
+                        </div>
+                        {u.isBanned && (
+                          <span className="inline-block mt-1 text-xs text-red-600 font-semibold bg-red-50 px-2 py-0.5 rounded">
+                            강퇴됨
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => toggleBan(u._id, !u.isBanned)}
+                        className={`px-3 py-1 text-sm rounded ${
+                          u.isBanned
+                            ? "bg-green-500 text-white hover:bg-green-600"
+                            : "bg-red-500 text-white hover:bg-red-600"
+                        }`}
+                      >
+                        {u.isBanned ? "강퇴 해제" : "강퇴"}
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
           )}
