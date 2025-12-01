@@ -194,7 +194,7 @@ export default function Header() {
               <img
                 src={logoImage}
                 alt="BILIDA"
-                className="h-14 w-auto sm:h-16"
+                className="h-16 w-auto sm:h-20 lg:h-24"
                 loading="lazy"
               />
             </button>
