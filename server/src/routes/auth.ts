@@ -224,6 +224,10 @@ router.post("/login", limiter, async (req, res) => {
         return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호 오류" });
       }
 
+      // 마지막 로그인 시간 업데이트
+      user.lastLoginAt = new Date();
+      await user.save();
+
       const token = signUser({
         id: String(user._id),
         userId: user.userId,
@@ -245,6 +249,10 @@ router.post("/login", limiter, async (req, res) => {
     if (!ok) {
       return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호 오류" });
     }
+
+    // 마지막 로그인 시간 업데이트
+    user.lastLoginAt = new Date();
+    await user.save();
 
     const token = signUser({
       id: String(user._id),

@@ -55,15 +55,23 @@ export default function Header() {
 
     const loadUnreadCount = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:4000"}/api/notifications/unread-count`, {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || API_BASE || "http://localhost:4000";
+        const res = await fetch(`${apiBase}/api/notifications/unread-count`, {
           credentials: "include",
         });
+        
+        if (!res.ok) {
+          // 404나 다른 에러는 조용히 처리 (알림 기능이 없을 수 있음)
+          return;
+        }
+        
         const data = await res.json();
-        if (res.ok && data.ok !== false) {
+        if (data.ok !== false) {
           setUnreadCount(data.count || 0);
         }
       } catch (e) {
-        console.error("읽지 않은 알림 개수 로드 실패:", e);
+        // 네트워크 오류는 조용히 처리 (알림 기능이 선택사항)
+        // console.error("읽지 않은 알림 개수 로드 실패:", e);
       }
     };
 

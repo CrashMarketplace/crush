@@ -17,6 +17,7 @@ const UserSchema = new Schema(
     bio: { type: String, default: "" },
     isAdmin: { type: Boolean, default: false },
     isBanned: { type: Boolean, default: false },
+    lastLoginAt: { type: Date }, // 마지막 로그인 시간
     // 사용자 평가 시스템
     mannerTemperature: { type: Number, default: 36.5, min: 0, max: 100 }, // 매너 온도
     trustScore: { type: Number, default: 0, min: 0, max: 100 }, // 신뢰 지수
