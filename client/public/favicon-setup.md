@@ -23,7 +23,7 @@
 
 ### 3. Google Search Console에서 확인
 1. https://search.google.com/search-console 접속
-2. 속성 선택: https://crush-two-flame.vercel.app
+2. 속성 선택: https://bilida.site
 3. "URL 검사" 도구 사용
 4. 메인 페이지 URL 입력
 5. "색인 생성 요청" 클릭
@@ -33,7 +33,7 @@
 - 새 사이트의 경우 최대 1주일 소요 가능
 
 ### 5. 확인 방법
-- Google에서 "site:crush-two-flame.vercel.app" 검색
+- Google에서 "site:bilida.site" 검색
 - 검색 결과 왼쪽에 로고 이미지 표시 확인
 
 ## 추가 최적화 (선택사항)
@@ -61,6 +61,6 @@
 ### 빠른 확인 방법
 브라우저에서 직접 접속:
 ```
-https://crush-two-flame.vercel.app/favicon.png
+https://bilida.site/favicon.png
 ```
 이미지가 정상적으로 보이면 설정 완료!
