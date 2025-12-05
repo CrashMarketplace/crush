@@ -1,0 +1,70 @@
+/* Tailwind 유틸 조합 - 재사용용 */
+.form-label {
+  @apply block mb-2 text-sm font-medium text-gray-800;
+}
+.form-required::after {
+  content: " *";
+  @apply text-red-500;
+}
+.form-hint {
+  @apply mt-1 text-xs text-gray-500;
+}
+.form-counter {
+  @apply mt-1 text-xs text-gray-400 text-right;
+}
+
+.input-base {
+  @apply w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition;
+}
+.input {
+  @apply input-base border-gray-300 focus:ring-neutral-900;
+}
+.input-error {
+  @apply input-base border-red-400 focus:ring-red-500;
+}
+
+.textarea {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 transition;
+}
+
+.select {
+  @apply w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 transition;
+}
+
+.btn-primary {
+  @apply h-12 px-5 inline-flex items-center justify-center font-semibold text-white rounded-lg bg-neutral-900 hover:opacity-90 disabled:opacity-50 transition;
+}
+
+.card {
+  @apply bg-white border border-gray-200 rounded-xl shadow-sm;
+}
+.section-title {
+  @apply text-lg font-bold;
+}
+
+.dropzone {
+  @apply flex flex-col items-center justify-center w-full p-6 text-center border-2 border-dashed rounded-xl border-gray-300 hover:border-neutral-900 bg-gray-50 cursor-pointer transition;
+}
+.thumb {
+  @apply relative overflow-hidden rounded-lg border border-gray-200;
+}
+.thumb-img {
+  @apply object-cover w-full h-28;
+}
+.thumb-del {
+  @apply absolute top-1 right-1 px-1.5 py-0.5 text-xs bg-black/70 text-white rounded;
+}
+.alert-ok {
+  @apply p-3 mb-4 text-sm text-green-800 bg-green-50 rounded-lg;
+}
+.alert-err {
+  @apply p-3 mb-4 text-sm text-red-800 bg-red-50 rounded-lg;
+}
+
+/* 배지 */
+.badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border;
+}
+.badge-yellow {
+  @apply border-amber-500 text-amber-700 bg-amber-50;
+}

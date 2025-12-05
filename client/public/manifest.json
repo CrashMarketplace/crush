@@ -1,0 +1,26 @@
+{
+  "name": "BILIDA - 지역 기반 중고 거래 및 대여 플랫폼",
+  "short_name": "BILIDA",
+  "description": "사용하지 않는 물건을 판매하고 필요한 물건을 대여하세요",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#001C6D",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "marketplace"],
+  "lang": "ko-KR"
+}
