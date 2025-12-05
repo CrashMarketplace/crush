@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 선택: 재사용 컴포넌트 유틸 */
+@layer components {
+  .card {
+    @apply border border-gray-200 rounded-xl bg-white overflow-hidden;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50;
+  }
+  .btn-primary {
+    @apply border-gray-900 bg-gray-900 text-white hover:opacity-90;
+  }
+  .section-title {
+    @apply text-lg font-semibold;
+  }
+}
