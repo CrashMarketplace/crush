@@ -38,7 +38,6 @@ export default function Map({
   height = "400px",
   zoom = 13,
   draggable = true,
-  onLocationSelect,
 }: MapProps) {
   const position: [number, number] = [latitude, longitude];
 
