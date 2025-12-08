@@ -14,6 +14,8 @@ export interface Product {
   price: number;
   category: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   images: string[];
   status: "selling" | "reserved" | "sold";
   usedAvailable?: boolean;

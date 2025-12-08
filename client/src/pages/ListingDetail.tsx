@@ -5,6 +5,7 @@ import ImageCarousel from "../components/ImageCarousel";
 import DetailSidebar from "../components/DetailSidebar";
 import ProductSection from "../components/ProductSection";
 import FraudRiskBadge from "../components/FraudRiskBadge";
+import Map from "../components/Map";
 // ✅ mockProducts 대신 타입만 재사용
 import type { Product } from "../data/mockProducts";
 import { getSellerId, getSellerProfile } from "../data/mockProducts";
@@ -498,6 +499,24 @@ export default function ListingDetail() {
               ? product.description
               : "판매자가 설명을 입력하지 않았습니다."}
           </div>
+
+          {/* 거래 희망 장소 지도 */}
+          {product.latitude && product.longitude && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-gray-700">📍 거래 희망 장소</h3>
+              <Map
+                latitude={product.latitude}
+                longitude={product.longitude}
+                address={product.location}
+                height="300px"
+                zoom={15}
+                draggable={true}
+              />
+              <p className="text-xs text-gray-500">
+                💡 지도를 드래그하여 주변을 확인할 수 있습니다
+              </p>
+            </div>
+          )}
 
           {/* AI 사기 위험 분석 */}
           {!canDelete && user && (
