@@ -4,6 +4,9 @@ import { SocketProvider } from "./context/SocketContext";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+// 🎄 크리스마스 효과 (나중에 삭제 가능)
+import ChristmasEffects from "./components/ChristmasEffects";
+import ChristmasPopup from "./components/ChristmasPopup";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -40,6 +43,10 @@ export default function App() {
     <div className="flex flex-col min-h-screen">
       <AuthProvider>
         <SocketProvider>
+          {/* 🎄 크리스마스 효과 (나중에 삭제 가능) */}
+          <ChristmasEffects />
+          <ChristmasPopup />
+          
           {/* 로그인/회원가입 페이지에서는 Header 숨김 */}
           {!hideLayout && <Header />}
 
