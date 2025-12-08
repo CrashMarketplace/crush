@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../utils/apiConfig";
 import LocationInput from "../components/LocationInput";
-import Map from "../components/Map";
+import ClickableMap from "../components/ClickableMap";
 
 type SelFile = { file: File; preview: string; id: string };
 
@@ -259,36 +259,58 @@ export default function ProductNew() {
           </div>
 
           {/* 위치 */}
-          <div>
-            <LocationInput
-              value={location}
-              onChange={(loc, lat, lng) => {
-                setLocation(loc);
-                setLatitude(lat);
-                setLongitude(lng);
-              }}
-              label="거래 희망 장소"
-              required={false}
-            />
-            <p className="form-hint mt-2">
-              도시명을 입력하면 자동으로 지도에 표시됩니다. (선택)
-            </p>
-          </div>
-
-          {/* 지도 미리보기 */}
-          {latitude && longitude && (
+          <div className="space-y-4">
             <div>
-              <label className="form-label">위치 미리보기</label>
-              <Map
-                latitude={latitude}
-                longitude={longitude}
-                address={location}
-                height="300px"
-                zoom={13}
-                draggable={true}
+              <LocationInput
+                value={location}
+                onChange={(loc, lat, lng) => {
+                  setLocation(loc);
+                  if (lat && lng) {
+                    setLatitude(lat);
+                    setLongitude(lng);
+                  }
+                }}
+                label="거래 희망 장소"
+                required={false}
               />
+              <p className="form-hint mt-2">
+                상가명, 카페, 지하철역 등을 검색하세요 (예: 대구 노마즈하우스)
+              </p>
             </div>
-          )}
+
+            {/* 클릭 가능한 지도 */}
+            {latitude && longitude && (
+              <div>
+                <label className="form-label">📍 정확한 위치 지정</label>
+                <ClickableMap
+                  latitude={latitude}
+                  longitude={longitude}
+                  onLocationChange={(lat, lng) => {
+                    setLatitude(lat);
+                    setLongitude(lng);
+                  }}
+                  height="400px"
+                  zoom={16}
+                />
+                <p className="form-hint mt-2">
+                  💡 지도를 클릭하여 정확한 만남 장소를 지정할 수 있습니다
+                </p>
+              </div>
+            )}
+
+            {/* 좌표 정보 표시 */}
+            {latitude && longitude && (
+              <div className="p-3 bg-gray-50 rounded-lg text-sm">
+                <div className="font-semibold text-gray-700 mb-1">선택된 위치 정보</div>
+                <div className="text-gray-600">
+                  <div>📌 주소: {location || "주소 미입력"}</div>
+                  <div className="mt-1 text-xs text-gray-500">
+                    좌표: {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* 이미지 */}
           <div>
