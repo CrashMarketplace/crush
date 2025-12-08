@@ -13,11 +13,18 @@ interface SearchResult {
   lat: string;
   lon: string;
   type: string;
+  class: string;
+  name?: string;
   address?: {
+    amenity?: string;
+    shop?: string;
+    building?: string;
     road?: string;
     suburb?: string;
     city?: string;
     state?: string;
+    postcode?: string;
+    house_number?: string;
   };
 }
 
@@ -74,28 +81,44 @@ export default function LocationInput({
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?` +
-          `q=${encodeURIComponent(inputValue)}&` +
-          `countrycodes=kr&` +
-          `format=json&` +
-          `limit=5&` +
-          `addressdetails=1`,
-          {
-            headers: {
-              'Accept-Language': 'ko-KR,ko;q=0.9',
+        // 더 정확한 검색을 위해 여러 API 호출 시도
+        const searches = [
+          // 1. 기본 검색 (상가명, 건물명 등)
+          fetch(
+            `https://nominatim.openstreetmap.org/search?` +
+            `q=${encodeURIComponent(inputValue)}&` +
+            `countrycodes=kr&` +
+            `format=json&` +
+            `limit=10&` +
+            `addressdetails=1&` +
+            `extratags=1&` +
+            `namedetails=1`,
+            {
+              headers: {
+                'Accept-Language': 'ko-KR,ko;q=0.9',
+                'User-Agent': 'BILIDA/1.0'
+              }
             }
-          }
-        );
-        const data: SearchResult[] = await response.json();
-        setSearchResults(data);
+          ).then(r => r.json()),
+        ];
+
+        const [results] = await Promise.all(searches);
+        
+        // 중복 제거 및 관련성 높은 순으로 정렬
+        const uniqueResults = results
+          .filter((place: SearchResult, index: number, self: SearchResult[]) => 
+            index === self.findIndex((p) => p.place_id === place.place_id)
+          )
+          .slice(0, 8); // 최대 8개 결과
+
+        setSearchResults(uniqueResults);
       } catch (error) {
         console.error("장소 검색 실패:", error);
         setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
-    }, 500);
+    }, 400);
 
     return () => {
       if (searchTimeoutRef.current) {
@@ -119,10 +142,55 @@ export default function LocationInput({
   };
 
   const handleSelectPlace = (place: SearchResult) => {
-    const displayName = place.display_name.split(',').slice(0, 2).join(',');
+    // 더 자세한 주소 생성
+    let displayName = place.display_name.split(',')[0];
+    
+    if (place.address) {
+      const parts = [];
+      if (place.address.road) parts.push(place.address.road);
+      if (place.address.suburb) parts.push(place.address.suburb);
+      if (place.address.city) parts.push(place.address.city);
+      
+      if (parts.length > 0) {
+        displayName = `${displayName} (${parts.slice(0, 2).join(', ')})`;
+      }
+    }
+    
     setInputValue(displayName);
     setShowSuggestions(false);
     onChange(displayName, parseFloat(place.lat), parseFloat(place.lon));
+  };
+
+  // 장소 타입에 따른 아이콘
+  const getPlaceIcon = (place: SearchResult) => {
+    if (place.class === 'amenity') {
+      if (place.type === 'cafe') return '☕';
+      if (place.type === 'restaurant') return '🍽️';
+      if (place.type === 'bank') return '🏦';
+      if (place.type === 'hospital') return '🏥';
+      if (place.type === 'school') return '🏫';
+      if (place.type === 'library') return '📚';
+      return '🏢';
+    }
+    if (place.class === 'railway' || place.type === 'station') return '🚇';
+    if (place.class === 'shop') return '🛍️';
+    if (place.class === 'building') return '🏢';
+    if (place.class === 'highway') return '🛣️';
+    return '📍';
+  };
+
+  // 더 자세한 주소 표시
+  const getDetailedAddress = (place: SearchResult) => {
+    const parts = [];
+    
+    if (place.address) {
+      if (place.address.house_number) parts.push(place.address.house_number);
+      if (place.address.road) parts.push(place.address.road);
+      if (place.address.suburb) parts.push(place.address.suburb);
+      if (place.address.city) parts.push(place.address.city);
+    }
+    
+    return parts.length > 0 ? parts.join(' ') : place.display_name.split(',').slice(0, 3).join(', ');
   };
 
   return (
@@ -138,7 +206,7 @@ export default function LocationInput({
           onChange={handleInputChange}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
-          placeholder="예: 스타벅스 강남점, 강남역, 홍대입구역 등"
+          placeholder="예: 노마즈하우스, 스타벅스 강남점, 강남역 등"
           className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           required={required}
         />
@@ -177,23 +245,33 @@ export default function LocationInput({
             {!isSearching && searchResults.length > 0 && (
               <div>
                 <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50">
-                  📍 검색 결과
+                  📍 검색 결과 ({searchResults.length}개)
                 </div>
                 {searchResults.map((place) => (
                   <button
                     key={place.place_id}
                     type="button"
                     onClick={() => handleSelectPlace(place)}
-                    className="w-full px-4 py-2 text-left hover:bg-green-50 transition-colors border-b last:border-b-0"
+                    className="w-full px-4 py-3 text-left hover:bg-green-50 transition-colors border-b last:border-b-0"
                   >
-                    <div className="font-medium text-sm">
-                      {place.display_name.split(',')[0]}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {place.display_name.split(',').slice(1, 3).join(',')}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {place.type} • {parseFloat(place.lat).toFixed(4)}, {parseFloat(place.lon).toFixed(4)}
+                    <div className="flex items-start gap-2">
+                      <span className="text-lg mt-0.5">{getPlaceIcon(place)}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-gray-900">
+                          {place.display_name.split(',')[0]}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                          {getDetailedAddress(place)}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+                            {place.type}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {parseFloat(place.lat).toFixed(5)}, {parseFloat(place.lon).toFixed(5)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -210,7 +288,7 @@ export default function LocationInput({
       </div>
 
       <div className="text-xs text-gray-500">
-        💡 카페, 지하철역, 건물명 등을 검색할 수 있습니다
+        💡 상가명, 카페, 지하철역, 건물명 등 구체적으로 검색하세요 (예: 대구 노마즈하우스)
       </div>
     </div>
   );
