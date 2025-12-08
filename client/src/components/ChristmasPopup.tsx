@@ -1,5 +1,6 @@
 // BILIDA 소개 팝업
 import { useState, useEffect } from "react";
+import logoImg from "../assets/Group 88.png";
 
 export default function ChristmasPopup() {
   const [isOpen, setIsOpen] = useState(false);
@@ -43,8 +44,12 @@ export default function ChristmasPopup() {
 
         {/* 로고 영역 */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg mb-4 animate-bounce-slow">
-            <span className="text-4xl font-bold text-white">B</span>
+          <div className="inline-flex items-center justify-center mb-4 animate-bounce-slow">
+            <img 
+              src={logoImg} 
+              alt="BILIDA 로고" 
+              className="w-24 h-24 object-contain"
+            />
           </div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
             BILIDA
