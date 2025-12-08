@@ -1,35 +1,35 @@
-// 🎄 크리스마스 팝업 (나중에 삭제 가능)
+// BILIDA 소개 팝업
 import { useState, useEffect } from "react";
 
 export default function ChristmasPopup() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // 페이지 로드 후 1초 뒤에 팝업 표시
+    // 페이지 로드 후 1.5초 뒤에 팝업 표시
     const timer = setTimeout(() => {
-      const hasSeenPopup = sessionStorage.getItem('christmas-popup-seen');
+      const hasSeenPopup = sessionStorage.getItem('bilida-intro-popup-seen');
       if (!hasSeenPopup) {
         setIsOpen(true);
       }
-    }, 1000);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, []);
 
   const handleClose = () => {
     setIsOpen(false);
-    sessionStorage.setItem('christmas-popup-seen', 'true');
+    sessionStorage.setItem('bilida-intro-popup-seen', 'true');
   };
 
   if (!isOpen) return null;
 
   return (
     <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
       onClick={handleClose}
     >
       <div 
-        className="bg-gradient-to-br from-red-50 via-white to-green-50 rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-scale-in border-4 border-red-200"
+        className="bg-gradient-to-br from-blue-50 via-white to-blue-50 rounded-3xl shadow-2xl max-w-lg w-full p-8 relative animate-scale-in border-2 border-blue-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 닫기 버튼 */}
@@ -41,51 +41,65 @@ export default function ChristmasPopup() {
           ×
         </button>
 
-        {/* 크리스마스 장식 */}
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-6xl animate-bounce">
-          🎅
+        {/* 로고 영역 */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg mb-4 animate-bounce-slow">
+            <span className="text-4xl font-bold text-white">B</span>
+          </div>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+            BILIDA
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">중고 대여 마켓플레이스</p>
         </div>
 
         {/* 내용 */}
-        <div className="text-center space-y-6 mt-4">
-          <div className="space-y-2">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-red-600 via-green-600 to-red-600 bg-clip-text text-transparent animate-pulse">
-              🎄 Merry Christmas! 🎄
-            </h2>
-            <p className="text-lg font-semibold text-gray-700">
-              행복한 크리스마스 되세요!
+        <div className="space-y-5">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-blue-100">
+            <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <span className="text-2xl">🔄</span>
+              BILIDA는 무엇인가요?
+            </h3>
+            <p className="text-gray-700 leading-relaxed text-sm">
+              필요한 물건을 빌리고, 안 쓰는 물건을 빌려주는<br/>
+              <strong className="text-blue-600">스마트한 중고 대여 플랫폼</strong>입니다.
             </p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-inner">
-            <p className="text-gray-700 leading-relaxed">
-              🎁 BILIDA와 함께하는<br/>
-              따뜻한 중고 대여 거래로<br/>
-              더욱 의미있는 연말 보내세요!
-            </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 text-center border border-blue-100">
+              <div className="text-3xl mb-2">💰</div>
+              <div className="text-xs font-semibold text-gray-700">합리적인 가격</div>
+            </div>
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 text-center border border-blue-100">
+              <div className="text-3xl mb-2">🛡️</div>
+              <div className="text-xs font-semibold text-gray-700">AI 사기 방지</div>
+            </div>
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 text-center border border-blue-100">
+              <div className="text-3xl mb-2">📍</div>
+              <div className="text-xs font-semibold text-gray-700">위치 기반 거래</div>
+            </div>
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 text-center border border-blue-100">
+              <div className="text-3xl mb-2">💬</div>
+              <div className="text-xs font-semibold text-gray-700">실시간 채팅</div>
+            </div>
           </div>
 
-          <div className="flex gap-2 justify-center text-4xl animate-bounce-slow">
-            <span>🎄</span>
-            <span style={{ animationDelay: '0.2s' }}>⭐</span>
-            <span style={{ animationDelay: '0.4s' }}>🎁</span>
-            <span style={{ animationDelay: '0.6s' }}>🔔</span>
-            <span style={{ animationDelay: '0.8s' }}>⛄</span>
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white text-center">
+            <p className="text-sm font-semibold">
+              ✨ 지금 바로 시작하세요!
+            </p>
+            <p className="text-xs mt-1 opacity-90">
+              회원가입 없이도 둘러볼 수 있어요
+            </p>
           </div>
 
           <button
             onClick={handleClose}
-            className="w-full py-3 px-6 bg-gradient-to-r from-red-500 to-green-500 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+            className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
           >
-            확인했어요! 🎅
+            시작하기 🚀
           </button>
         </div>
-
-        {/* 반짝이는 별 */}
-        <div className="absolute top-4 left-4 text-2xl animate-twinkle">✨</div>
-        <div className="absolute top-8 right-8 text-xl animate-twinkle" style={{ animationDelay: '0.5s' }}>✨</div>
-        <div className="absolute bottom-8 left-8 text-xl animate-twinkle" style={{ animationDelay: '1s' }}>✨</div>
-        <div className="absolute bottom-4 right-4 text-2xl animate-twinkle" style={{ animationDelay: '1.5s' }}>✨</div>
       </div>
 
       <style>{`
@@ -100,7 +114,7 @@ export default function ChristmasPopup() {
 
         @keyframes scale-in {
           from {
-            transform: scale(0.8);
+            transform: scale(0.9);
             opacity: 0;
           }
           to {
@@ -114,18 +128,7 @@ export default function ChristmasPopup() {
             transform: translateY(0);
           }
           50% {
-            transform: translateY(-10px);
-          }
-        }
-
-        @keyframes twinkle {
-          0%, 100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.3;
-            transform: scale(0.8);
+            transform: translateY(-8px);
           }
         }
 
@@ -139,10 +142,6 @@ export default function ChristmasPopup() {
 
         .animate-bounce-slow {
           animation: bounce-slow 2s ease-in-out infinite;
-        }
-
-        .animate-twinkle {
-          animation: twinkle 2s ease-in-out infinite;
         }
       `}</style>
     </div>
