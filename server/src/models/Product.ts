@@ -8,6 +8,8 @@ const ProductSchema = new Schema(
     price: { type: Number, required: true, min: 0 },
     category: { type: String, default: "기타", index: true },
     location: { type: String, default: "미정", index: true },
+    latitude: { type: Number }, // 위도
+    longitude: { type: Number }, // 경도
     images: { type: [String], default: [] }, // 업로드된 이미지 URL 배열
     status: {
       type: String,
