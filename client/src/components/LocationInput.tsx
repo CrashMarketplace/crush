@@ -81,44 +81,53 @@ export default function LocationInput({
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
-        // 더 정확한 검색을 위해 여러 API 호출 시도
-        const searches = [
-          // 1. 기본 검색 (상가명, 건물명 등)
-          fetch(
-            `https://nominatim.openstreetmap.org/search?` +
-            `q=${encodeURIComponent(inputValue)}&` +
-            `countrycodes=kr&` +
-            `format=json&` +
-            `limit=10&` +
-            `addressdetails=1&` +
-            `extratags=1&` +
-            `namedetails=1`,
-            {
-              headers: {
-                'Accept-Language': 'ko-KR,ko;q=0.9',
-                'User-Agent': 'BILIDA/1.0'
-              }
+        // 더 넓은 범위로 검색 (건물, 상가, POI 모두 포함)
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?` +
+          `q=${encodeURIComponent(inputValue)}&` +
+          `countrycodes=kr&` +
+          `format=json&` +
+          `limit=15&` + // 15개로 증가
+          `addressdetails=1&` +
+          `extratags=1&` +
+          `namedetails=1&` +
+          `dedupe=0`, // 중복 제거 비활성화로 더 많은 결과
+          {
+            headers: {
+              'Accept-Language': 'ko-KR,ko;q=0.9',
+              'User-Agent': 'BILIDA/1.0'
             }
-          ).then(r => r.json()),
-        ];
+          }
+        );
 
-        const [results] = await Promise.all(searches);
+        const results: SearchResult[] = await response.json();
         
-        // 중복 제거 및 관련성 높은 순으로 정렬
-        const uniqueResults = results
-          .filter((place: SearchResult, index: number, self: SearchResult[]) => 
-            index === self.findIndex((p) => p.place_id === place.place_id)
-          )
-          .slice(0, 8); // 최대 8개 결과
+        // 관련성 높은 순으로 정렬 (건물, 상가, POI 우선)
+        const sortedResults = results.sort((a, b) => {
+          const priorityA = getPriority(a);
+          const priorityB = getPriority(b);
+          return priorityB - priorityA;
+        });
 
-        setSearchResults(uniqueResults);
+        setSearchResults(sortedResults.slice(0, 10));
       } catch (error) {
         console.error("장소 검색 실패:", error);
         setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
-    }, 400);
+    }, 300); // 300ms로 단축
+
+    function getPriority(place: SearchResult): number {
+      // 건물, 상가, POI에 높은 우선순위
+      if (place.class === 'building') return 10;
+      if (place.class === 'shop') return 9;
+      if (place.class === 'amenity') return 8;
+      if (place.class === 'railway' || place.type === 'station') return 7;
+      if (place.class === 'tourism') return 6;
+      if (place.class === 'office') return 5;
+      return 1;
+    }
 
     return () => {
       if (searchTimeoutRef.current) {
@@ -279,8 +288,12 @@ export default function LocationInput({
             )}
 
             {!isSearching && searchResults.length === 0 && inputValue.length >= 2 && citySuggestions.length === 0 && (
-              <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                검색 결과가 없습니다
+              <div className="px-4 py-4 text-sm text-gray-500 text-center space-y-2">
+                <div>😕 검색 결과가 없습니다</div>
+                <div className="text-xs">
+                  💡 팁: "대구 중구", "서울 강남구" 같이 지역명을 함께 입력하거나<br/>
+                  유명한 랜드마크 근처로 검색해보세요
+                </div>
               </div>
             )}
           </div>
