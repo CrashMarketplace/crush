@@ -1,10 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface LocationInputProps {
   value: string;
   onChange: (location: string, lat?: number, lng?: number) => void;
   label?: string;
   required?: boolean;
+}
+
+interface SearchResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  type: string;
+  address?: {
+    road?: string;
+    suburb?: string;
+    city?: string;
+    state?: string;
+  };
 }
 
 // 한국 주요 도시 좌표
@@ -36,10 +50,59 @@ export default function LocationInput({
 }: LocationInputProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [inputValue, setInputValue] = useState(value);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const suggestions = Object.keys(KOREA_CITIES).filter((city) =>
+  // 도시 자동완성
+  const citySuggestions = Object.keys(KOREA_CITIES).filter((city) =>
     city.includes(inputValue)
   );
+
+  // Nominatim API로 실시간 장소 검색
+  useEffect(() => {
+    if (inputValue.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    // 디바운스: 500ms 후에 검색
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?` +
+          `q=${encodeURIComponent(inputValue)}&` +
+          `countrycodes=kr&` +
+          `format=json&` +
+          `limit=5&` +
+          `addressdetails=1`,
+          {
+            headers: {
+              'Accept-Language': 'ko-KR,ko;q=0.9',
+            }
+          }
+        );
+        const data: SearchResult[] = await response.json();
+        setSearchResults(data);
+      } catch (error) {
+        console.error("장소 검색 실패:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [inputValue]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -55,6 +118,13 @@ export default function LocationInput({
     onChange(city, coords.lat, coords.lng);
   };
 
+  const handleSelectPlace = (place: SearchResult) => {
+    const displayName = place.display_name.split(',').slice(0, 2).join(',');
+    setInputValue(displayName);
+    setShowSuggestions(false);
+    onChange(displayName, parseFloat(place.lat), parseFloat(place.lon));
+  };
+
   return (
     <div className="space-y-2">
       <label className="block text-sm font-semibold">
@@ -67,33 +137,80 @@ export default function LocationInput({
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-          placeholder="예: 서울, 강남구, 홍대 등"
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
+          placeholder="예: 스타벅스 강남점, 강남역, 홍대입구역 등"
           className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           required={required}
         />
 
-        {showSuggestions && suggestions.length > 0 && inputValue && (
-          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-            {suggestions.map((city) => (
-              <button
-                key={city}
-                type="button"
-                onClick={() => handleSelectCity(city)}
-                className="w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors"
-              >
-                <div className="font-medium">{city}</div>
-                <div className="text-xs text-gray-500">
-                  {KOREA_CITIES[city].lat.toFixed(4)}, {KOREA_CITIES[city].lng.toFixed(4)}
+        {showSuggestions && inputValue && (
+          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto">
+            {/* 도시 빠른 선택 */}
+            {citySuggestions.length > 0 && (
+              <div className="border-b">
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50">
+                  🏙️ 주요 도시
                 </div>
-              </button>
-            ))}
+                {citySuggestions.map((city) => (
+                  <button
+                    key={city}
+                    type="button"
+                    onClick={() => handleSelectCity(city)}
+                    className="w-full px-4 py-2 text-left hover:bg-blue-50 transition-colors"
+                  >
+                    <div className="font-medium">{city}</div>
+                    <div className="text-xs text-gray-500">
+                      {KOREA_CITIES[city].lat.toFixed(4)}, {KOREA_CITIES[city].lng.toFixed(4)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 실시간 장소 검색 결과 */}
+            {isSearching && (
+              <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                🔍 검색 중...
+              </div>
+            )}
+
+            {!isSearching && searchResults.length > 0 && (
+              <div>
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50">
+                  📍 검색 결과
+                </div>
+                {searchResults.map((place) => (
+                  <button
+                    key={place.place_id}
+                    type="button"
+                    onClick={() => handleSelectPlace(place)}
+                    className="w-full px-4 py-2 text-left hover:bg-green-50 transition-colors border-b last:border-b-0"
+                  >
+                    <div className="font-medium text-sm">
+                      {place.display_name.split(',')[0]}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {place.display_name.split(',').slice(1, 3).join(',')}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {place.type} • {parseFloat(place.lat).toFixed(4)}, {parseFloat(place.lon).toFixed(4)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!isSearching && searchResults.length === 0 && inputValue.length >= 2 && citySuggestions.length === 0 && (
+              <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                검색 결과가 없습니다
+              </div>
+            )}
           </div>
         )}
       </div>
 
       <div className="text-xs text-gray-500">
-        💡 도시명을 입력하면 자동으로 좌표가 설정됩니다
+        💡 카페, 지하철역, 건물명 등을 검색할 수 있습니다
       </div>
     </div>
   );
