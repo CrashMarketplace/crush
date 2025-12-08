@@ -21,7 +21,6 @@ import Admin from "./pages/Admin";
 import ProductEdit from "./pages/ProductEdit";
 import Reservations from "./pages/Reservations";
 import Notifications from "./pages/Notifications";
-import About from "./pages/About";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import UserReviews from "./pages/UserReviews";
@@ -63,7 +62,6 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/sell" element={<ProductNew />} />
-            <Route path="/about" element={<About />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/user/:userId/reviews" element={<UserReviews />} />

@@ -55,10 +55,31 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-// Helmet (allow cross-origin resource embedding)
+// 🔒 보안 강화: Helmet with security headers
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https:", "wss:"],
+      fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+  noSniff: true,
+  xssFilter: true,
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
 }));
 
 // Request log
@@ -72,8 +93,18 @@ app.use(morgan("tiny"));
 // Health
 app.get("/health", (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
 
-// Rate limit
-app.use("/api", rateLimit({ windowMs: 60000, max: 200, standardHeaders: true, legacyHeaders: false }));
+// 🔒 보안 강화: Rate limit
+app.use("/api", rateLimit({ 
+  windowMs: 60000, // 1분
+  max: 200, // 최대 200회
+  standardHeaders: true, 
+  legacyHeaders: false,
+  message: { ok: false, error: "너무 많은 요청입니다. 잠시 후 다시 시도해주세요." },
+  skip: (req) => {
+    // Health check는 rate limit 제외
+    return req.path === "/health";
+  }
+}));
 
 // ---- Uploads path & directory ensure ----
 const uploadsPath = process.env.UPLOADS_DIR
