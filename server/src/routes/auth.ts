@@ -84,7 +84,19 @@ const avatarUpdateSchema = z.object({
 
 /* -------------------- router ----------------------- */
 const router = Router();
-const limiter = rateLimit({ windowMs: 60_000, max: 10 });
+
+// 🔒 보안 강화: Rate Limiting
+const limiter = rateLimit({ 
+  windowMs: 60_000, // 1분
+  max: 10, // 최대 10회
+  message: { ok: false, error: "너무 많은 요청입니다. 잠시 후 다시 시도해주세요." }
+});
+
+const strictLimiter = rateLimit({
+  windowMs: 60_000, // 1분
+  max: 5, // 최대 5회
+  message: { ok: false, error: "너무 많은 로그인 시도입니다. 1분 후 다시 시도해주세요." }
+});
 
 /**
  * POST /api/auth/send-code
@@ -160,12 +172,22 @@ router.post("/signup", limiter, async (req, res) => {
   try {
     const { userId, password, email } = signupSchema.parse(req.body);
 
+    // 🔒 보안: 아이디 검증 (특수문자 제한)
+    if (!/^[a-zA-Z0-9_-]+$/.test(userId)) {
+      return res.status(400).json({ ok: false, error: "아이디는 영문, 숫자, _, - 만 사용 가능합니다." });
+    }
+
+    // 🔒 보안: 비밀번호 강도 검증
+    if (password.length < 8) {
+      return res.status(400).json({ ok: false, error: "비밀번호는 최소 8자 이상이어야 합니다." });
+    }
+
     const exists = await User.findOne({ $or: [{ userId }, { email }] });
     if (exists) {
       return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디/이메일" });
     }
 
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await bcrypt.hash(password, 12); // 🔒 보안: bcrypt rounds 10 → 12
     const user = await User.create({
       userId,
       passwordHash: hash,
@@ -189,7 +211,7 @@ router.post("/signup", limiter, async (req, res) => {
 });
 
 /* 로그인 */
-router.post("/login", limiter, async (req, res) => {
+router.post("/login", strictLimiter, async (req, res) => {
   try {
     const { userId, password } = loginSchema.parse(req.body);
 

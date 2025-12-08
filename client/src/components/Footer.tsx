@@ -4,7 +4,6 @@ export default function Footer() {
   const navigate = useNavigate();
 
   const links = [
-    { label: "회사소개", path: "/about" },
     { label: "이용약관", path: "/terms" },
     { label: "개인정보처리방침", path: "/privacy" },
   ];
@@ -26,7 +25,7 @@ export default function Footer() {
         <div className="space-y-2 text-xs leading-6 text-[#000000] sm:text-sm">
           <p>본 서비스는 지역 기반 중고 대여 거래 플랫폼입니다.</p>
           <p>
-            <strong>대표:</strong> 장준수 | <strong>이메일:</strong>{" "}
+            <strong>문의:</strong>{" "}
             <a
               href="mailto:junsumon090608@dgsw.hs.kr"
               className="underline underline-offset-2"
@@ -35,7 +34,7 @@ export default function Footer() {
             </a>
           </p>
           <p className="text-gray-500">
-            판매자, 구매자, 개발자, 택배업체 모두를 위한 안전한 거래 플랫폼
+            안전하고 편리한 중고 대여 거래 플랫폼
           </p>
           <p className="text-gray-400">© {new Date().getFullYear()} BILIDA. All rights reserved.</p>
         </div>
