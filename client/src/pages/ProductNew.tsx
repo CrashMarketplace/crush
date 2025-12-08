@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../utils/apiConfig";
+import LocationInput from "../components/LocationInput";
+import Map from "../components/Map";
 
 type SelFile = { file: File; preview: string; id: string };
 
@@ -27,6 +29,8 @@ export default function ProductNew() {
 
   const [category, setCategory] = useState("기타");
   const [location, setLocation] = useState("");
+  const [latitude, setLatitude] = useState<number>();
+  const [longitude, setLongitude] = useState<number>();
   const [usedAvailable, setUsedAvailable] = useState(false);
   const [selFiles, setSelFiles] = useState<SelFile[]>([]);
   const [busy, setBusy] = useState(false);
@@ -135,6 +139,8 @@ export default function ProductNew() {
           price,
           category,
           location: location.trim() || "미정",
+          latitude,
+          longitude,
           usedAvailable,
           images: urls,
         }),
@@ -149,6 +155,8 @@ export default function ProductNew() {
       setPriceRaw("");
       setCategory("기타");
       setLocation("");
+      setLatitude(undefined);
+      setLongitude(undefined);
       setUsedAvailable(false);
       setSelFiles([]);
       setTouched({});
@@ -252,17 +260,35 @@ export default function ProductNew() {
 
           {/* 위치 */}
           <div>
-            <label className="form-label">거래 지역</label>
-            <input
+            <LocationInput
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="input"
-              placeholder="예) 대구 수성구"
+              onChange={(loc, lat, lng) => {
+                setLocation(loc);
+                setLatitude(lat);
+                setLongitude(lng);
+              }}
+              label="거래 희망 장소"
+              required={false}
             />
-            <p className="form-hint">
-              직거래를 원하시면 동/구 단위로 적어주세요. (선택)
+            <p className="form-hint mt-2">
+              도시명을 입력하면 자동으로 지도에 표시됩니다. (선택)
             </p>
           </div>
+
+          {/* 지도 미리보기 */}
+          {latitude && longitude && (
+            <div>
+              <label className="form-label">위치 미리보기</label>
+              <Map
+                latitude={latitude}
+                longitude={longitude}
+                address={location}
+                height="300px"
+                zoom={13}
+                draggable={true}
+              />
+            </div>
+          )}
 
           {/* 이미지 */}
           <div>
