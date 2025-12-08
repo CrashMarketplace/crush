@@ -16,7 +16,7 @@ export default function About() {
             지속 가능한 소비 문화를 만들어갑니다.
           </p>
           <p>
-            2024년에 설립된 BILIDA는 사용자 간의 신뢰를 바탕으로 안전하고 편리한
+            BILIDA는 사용자 간의 신뢰를 바탕으로 안전하고 편리한
             거래 환경을 제공하며, 지역 커뮤니티의 활성화에 기여하고 있습니다.
           </p>
         </section>
@@ -62,13 +62,11 @@ export default function About() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">회사 정보</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">서비스 정보</h2>
           <div className="bg-gray-50 p-6 rounded-lg space-y-2">
-            <p><strong>상호:</strong> BILIDA</p>
-            <p><strong>설립일:</strong> 2024년</p>
-            <p><strong>대표:</strong> 장준수</p>
+            <p><strong>서비스명:</strong> BILIDA</p>
             <p><strong>이메일:</strong> junsumon090608@dgsw.hs.kr</p>
-            <p><strong>주소:</strong> 대구광역시</p>
+            <p><strong>지역:</strong> 대한민국</p>
           </div>
         </section>
 

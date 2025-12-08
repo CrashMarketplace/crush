@@ -215,7 +215,7 @@ export default function LocationInput({
           onChange={handleInputChange}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
-          placeholder="예: 노마즈하우스, 스타벅스 강남점, 강남역 등"
+          placeholder="예: 스타벅스 강남점, 강남역, 홍대입구역 등"
           className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           required={required}
         />
@@ -301,7 +301,7 @@ export default function LocationInput({
       </div>
 
       <div className="text-xs text-gray-500">
-        💡 상가명, 카페, 지하철역, 건물명 등 구체적으로 검색하세요 (예: 대구 노마즈하우스)
+        💡 상가명, 카페, 지하철역, 건물명 등 구체적으로 검색하세요
       </div>
     </div>
   );

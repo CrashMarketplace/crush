@@ -274,7 +274,7 @@ export default function ProductNew() {
                 required={false}
               />
               <p className="form-hint mt-2">
-                상가명, 카페, 지하철역 등을 검색하세요 (예: 대구 노마즈하우스)
+                상가명, 카페, 지하철역 등을 검색하세요 (예: 스타벅스 강남점)
               </p>
             </div>
 
