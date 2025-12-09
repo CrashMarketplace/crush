@@ -39,18 +39,44 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 const isRailway = Boolean(process.env.RAILWAY_PROJECT_ID);
 const isProduction = !isDevelopment || isRailway;
 
-// allowedOriginsList kept (not used directly now)
+// 🔒 보안: 허용된 도메인 목록
 const allowedOriginsList = [
   "https://bilidamarket.com",
   "https://www.bilidamarket.com",
   "http://localhost:5173",
+  "http://localhost:4000",
+  "https://crush-two-flame.vercel.app", // 메인 Vercel 도메인
   "https://crush-git-main-0608s-projects.vercel.app",
   "https://crush-2et7g8ny6-0608s-projects.vercel.app",
   ...(process.env.ALLOWED_ORIGINS?.split(",").map(x => x.trim()) || []),
 ];
 
 // CORS (permissive for Vercel previews)
-const corsOptions: CorsOptions = { origin: true, credentials: true };
+const corsOptions: CorsOptions = { 
+  origin: (origin, callback) => {
+    // origin이 없으면 (같은 도메인) 허용
+    if (!origin) return callback(null, true);
+    
+    // Vercel 프리뷰 도메인 자동 허용
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // 허용 목록에 있으면 허용
+    if (allowedOriginsList.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // 개발 환경에서는 모두 허용
+    if (isDevelopment) {
+      return callback(null, true);
+    }
+    
+    console.warn("⚠️ CORS 차단:", origin);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true 
+};
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
