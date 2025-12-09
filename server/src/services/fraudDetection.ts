@@ -34,12 +34,29 @@ const CATEGORY_AVERAGE_PRICES: Record<string, number> = {
   "기타": 50000,
 };
 
-// 🔥 위험 키워드 (확장)
+// 🔥 위험 키워드 (리뷰용)
 const RISK_KEYWORDS = [
   "노쇼", "입금", "선입금", "말 바꿈", "연락두절", "사기",
   "환불거부", "거짓말", "불친절", "위협", "욕설",
   "먹튀", "차단", "신고", "경찰", "고소", "피해",
-  "속았", "조심", "주의", "의심", "이상함", "수상","노무현","응디","문재인","시발","ㅋ","ㅠ"
+  "속았", "조심", "주의", "의심", "이상함", "수상"
+];
+
+// 🔥 가짜 상품 키워드 (상품명/설명용)
+const FAKE_PRODUCT_KEYWORDS = [
+  // 정치인
+  "노무현", "문재인", "윤석열", "이명박", "박근혜", "김대중", "전두환", "노태우",
+  "이재명", "홍준표", "안철수", "심상정", "유승민", "김무성", "나경원",
+  // 연예인/유명인
+  "BTS", "방탄소년단", "블랙핑크", "아이유", "손흥민", "김연아", "박지성",
+  "싸이", "빅뱅", "트와이스", "엑소", "레드벨벳", "뉴진스", "에스파",
+  // 욕설/비속어
+  "시발", "씨발", "ㅅㅂ", "개새", "병신", "ㅂㅅ", "좆", "ㅈ같", "엿먹",
+  "응디", "ㅇㄷ", "꺼져", "죽어", "디져", "뒤져",
+  // 정치/사회 이슈
+  "민주당", "국민의힘", "정의당", "진보당", "좌파", "우파", "종북", "빨갱이",
+  // 기타 부적절
+  "마약", "대마초", "필로폰", "총기", "폭탄", "테러"
 ];
 
 // 🔥 의심스러운 리뷰 패턴
@@ -80,17 +97,20 @@ export class FraudDetectionService {
     // 판매자의 예약 기록
     const sellerReservations = await Reservation.find({ seller: sellerId });
 
-    // 2. 각 항목별 위험도 분석 (리뷰 패턴과 행동 패턴만)
+    // 2. 각 항목별 위험도 분석
+    const productAnalysis = this.analyzeProductContent(product);  // 🔥 상품 내용 분석 추가
     const reviewAnalysis = this.analyzeReviewPattern(sellerReviews);
     const behaviorAnalysis = this.analyzeBehaviorPattern(seller, sellerProducts, sellerReservations);
 
-    // 3. 종합 위험 점수 계산 (리뷰 패턴 80%, 행동 패턴 20%)
+    // 3. 종합 위험 점수 계산
     const weights = {
-      review: 0.80,        // 80% - 리뷰 패턴이 가장 중요
-      behavior: 0.20,      // 20% - 행동 패턴
+      product: 0.50,       // 50% - 상품 내용 (가장 중요!)
+      review: 0.40,        // 40% - 리뷰 패턴
+      behavior: 0.10,      // 10% - 행동 패턴
     };
 
     const riskScore = Math.round(
+      productAnalysis.score * weights.product +
       reviewAnalysis.score * weights.review +
       behaviorAnalysis.score * weights.behavior
     );
@@ -98,6 +118,7 @@ export class FraudDetectionService {
     // 4. 위험 요소 수집
     const riskFactors: string[] = [];
     
+    if (productAnalysis.score > 50) riskFactors.push(productAnalysis.description);
     if (reviewAnalysis.score > 50) riskFactors.push(reviewAnalysis.description);
     if (behaviorAnalysis.score > 50) riskFactors.push(behaviorAnalysis.description);
 
@@ -123,6 +144,43 @@ export class FraudDetectionService {
         behaviorPattern: behaviorAnalysis,
       },
     };
+  }
+
+  /**
+   * 🔥 상품 내용 분석 (가짜 상품 감지)
+   */
+  private analyzeProductContent(product: any): { score: number; description: string } {
+    const title = (product.title || "").toLowerCase();
+    const productDesc = (product.description || "").toLowerCase();
+    const fullText = `${title} ${productDesc}`;
+
+    // 가짜 상품 키워드 검색
+    const foundKeywords: string[] = [];
+    
+    FAKE_PRODUCT_KEYWORDS.forEach(keyword => {
+      if (fullText.includes(keyword.toLowerCase())) {
+        foundKeywords.push(keyword);
+      }
+    });
+
+    let score = 0;
+    let description = "";
+
+    if (foundKeywords.length > 0) {
+      score = 100;  // 최고 위험도!
+      description = `🚨 가짜 상품 의심: "${foundKeywords.slice(0, 3).join(", ")}" 포함`;
+    } else if (title.length < 3) {
+      score = 70;
+      description = "⚠️ 상품명이 너무 짧음";
+    } else if (productDesc.length < 10) {
+      score = 50;
+      description = "⚠️ 상품 설명이 너무 짧음";
+    } else {
+      score = 0;
+      description = "✅ 정상 상품";
+    }
+
+    return { score, description };
   }
 
   /**
