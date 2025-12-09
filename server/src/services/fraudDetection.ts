@@ -34,10 +34,24 @@ const CATEGORY_AVERAGE_PRICES: Record<string, number> = {
   "기타": 50000,
 };
 
-// 위험 키워드
+// 🔥 위험 키워드 (확장)
 const RISK_KEYWORDS = [
   "노쇼", "입금", "선입금", "말 바꿈", "연락두절", "사기",
-  "환불거부", "거짓말", "불친절", "위협", "욕설"
+  "환불거부", "거짓말", "불친절", "위협", "욕설",
+  "먹튀", "차단", "신고", "경찰", "고소", "피해",
+  "속았", "조심", "주의", "의심", "이상함", "수상","노무현","응디","문재인","시발","ㅋ","ㅠ"
+];
+
+// 🔥 의심스러운 리뷰 패턴
+const SUSPICIOUS_PATTERNS = [
+  /ㅋ{3,}/g,           // ㅋㅋㅋ 이상
+  /ㅎ{3,}/g,           // ㅎㅎㅎ 이상
+  /\.{3,}/g,           // ... 이상
+  /!{3,}/g,            // !!! 이상
+  /\?{3,}/g,           // ??? 이상
+  /(.)\1{4,}/g,        // 같은 글자 5번 이상 반복
+  /^.{1,5}$/,          // 5글자 이하 짧은 리뷰
+  /[ㄱ-ㅎㅏ-ㅣ]{5,}/,  // 자음/모음만 5개 이상
 ];
 
 export class FraudDetectionService {
@@ -74,12 +88,13 @@ export class FraudDetectionService {
     const behaviorAnalysis = this.analyzeBehaviorPattern(seller, sellerProducts, sellerReservations);
 
     // 3. 종합 위험 점수 계산 (가중 평균)
+    // 🔥 리뷰 패턴을 가장 중요하게 평가
     const weights = {
-      accountAge: 0.15,
-      transaction: 0.25,
-      price: 0.30,
-      review: 0.20,
-      behavior: 0.10,
+      accountAge: 0.05,    // 5% (낮춤)
+      transaction: 0.10,   // 10% (낮춤)
+      price: 0.30,         // 30% (유지)
+      review: 0.45,        // 45% (크게 높임!)
+      behavior: 0.10,      // 10% (유지)
     };
 
     const riskScore = Math.round(
@@ -235,17 +250,17 @@ export class FraudDetectionService {
   }
 
   /**
-   * 리뷰 패턴 분석
+   * 리뷰 패턴 분석 (강화)
    */
   private analyzeReviewPattern(reviews: any[]): { score: number; description: string } {
     if (reviews.length === 0) {
-      return { score: 30, description: "리뷰 없음" };
+      return { score: 40, description: "리뷰 없음 (신뢰도 낮음)" };
     }
 
     const negativeCount = reviews.filter(r => r.reviewType === "negative").length;
     const negativeRate = (negativeCount / reviews.length) * 100;
 
-    // 위험 키워드 검색
+    // 🔥 위험 키워드 검색
     let riskKeywordCount = 0;
     const foundKeywords: string[] = [];
 
@@ -261,21 +276,61 @@ export class FraudDetectionService {
       });
     });
 
+    // 🔥 의심스러운 패턴 검색
+    let suspiciousPatternCount = 0;
+    const foundPatterns: string[] = [];
+
+    reviews.forEach(review => {
+      const comment = review.comment || "";
+      
+      SUSPICIOUS_PATTERNS.forEach((pattern, index) => {
+        if (pattern.test(comment)) {
+          suspiciousPatternCount++;
+          
+          // 패턴별 설명
+          const patternNames = [
+            "과도한 ㅋㅋㅋ",
+            "과도한 ㅎㅎㅎ", 
+            "과도한 ...",
+            "과도한 !!!",
+            "과도한 ???",
+            "같은 글자 반복",
+            "너무 짧은 리뷰",
+            "자음/모음만 사용"
+          ];
+          
+          if (!foundPatterns.includes(patternNames[index])) {
+            foundPatterns.push(patternNames[index]);
+          }
+        }
+      });
+    });
+
     let score = 0;
     let description = "";
 
+    // 🔥 점수 계산 (더 민감하게)
     if (riskKeywordCount > 0) {
+      score = 90;
+      description = `⚠️ 위험 키워드 발견: ${foundKeywords.join(", ")}`;
+    } else if (suspiciousPatternCount >= 3) {
       score = 80;
-      description = `위험 키워드 발견: ${foundKeywords.join(", ")}`;
+      description = `⚠️ 의심스러운 리뷰 패턴: ${foundPatterns.slice(0, 3).join(", ")}`;
+    } else if (suspiciousPatternCount >= 1) {
+      score = 60;
+      description = `⚡ 부적절한 리뷰: ${foundPatterns.join(", ")}`;
     } else if (negativeRate > 50) {
       score = 70;
       description = `부정 리뷰 ${negativeRate.toFixed(0)}%`;
     } else if (negativeRate > 30) {
-      score = 40;
+      score = 50;
       description = `부정 리뷰 ${negativeRate.toFixed(0)}%`;
+    } else if (reviews.length < 3) {
+      score = 20;
+      description = `리뷰 부족 (${reviews.length}개)`;
     } else {
       score = 0;
-      description = `긍정적 리뷰 패턴 (${reviews.length}개)`;
+      description = `✅ 정상 리뷰 패턴 (${reviews.length}개)`;
     }
 
     return { score, description };
