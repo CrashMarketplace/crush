@@ -267,6 +267,11 @@ router.post("/login", strictLimiter, async (req, res) => {
       return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호 오류" });
     }
 
+    // 🔒 보안: 강퇴된 사용자 로그인 차단
+    if (user.isBanned) {
+      return res.status(403).json({ ok: false, error: "강퇴된 계정입니다. 관리자에게 문의하세요." });
+    }
+
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) {
       return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호 오류" });
@@ -299,6 +304,12 @@ router.get("/me", async (req, res) => {
   if (!user) {
     clearAuthCookie(res);
     return res.status(401).json({ ok: false, error: "unauthorized" });
+  }
+
+  // 🔒 보안: 강퇴된 사용자 자동 로그아웃
+  if (user.isBanned) {
+    clearAuthCookie(res);
+    return res.status(403).json({ ok: false, error: "banned", message: "강퇴된 계정입니다." });
   }
 
   return res.json({ ok: true, user: toPublicUser(user) });

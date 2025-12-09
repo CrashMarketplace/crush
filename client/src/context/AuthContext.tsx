@@ -52,7 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const me = await api<{ ok: true; user: User }>("/auth/me");
         setUser(me.user);
-      } catch {
+      } catch (error: any) {
+        // 🔒 강퇴된 사용자 처리
+        if (error.message === "banned") {
+          alert("강퇴된 계정입니다. 관리자에게 문의하세요.");
+        }
         setUser(null);
       } finally {
         setLoading(false);
