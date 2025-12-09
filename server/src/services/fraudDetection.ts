@@ -80,27 +80,17 @@ export class FraudDetectionService {
     // 판매자의 예약 기록
     const sellerReservations = await Reservation.find({ seller: sellerId });
 
-    // 2. 각 항목별 위험도 분석
-    const accountAgeAnalysis = this.analyzeAccountAge(seller);
-    const transactionAnalysis = this.analyzeTransactionHistory(seller, sellerReservations);
-    const priceAnalysis = await this.analyzePriceRisk(product, sellerProducts);
+    // 2. 각 항목별 위험도 분석 (리뷰 패턴과 행동 패턴만)
     const reviewAnalysis = this.analyzeReviewPattern(sellerReviews);
     const behaviorAnalysis = this.analyzeBehaviorPattern(seller, sellerProducts, sellerReservations);
 
-    // 3. 종합 위험 점수 계산 (가중 평균)
-    // 🔥 리뷰 패턴을 가장 중요하게 평가
+    // 3. 종합 위험 점수 계산 (리뷰 패턴 80%, 행동 패턴 20%)
     const weights = {
-      accountAge: 0.05,    // 5% (낮춤)
-      transaction: 0.10,   // 10% (낮춤)
-      price: 0.30,         // 30% (유지)
-      review: 0.45,        // 45% (크게 높임!)
-      behavior: 0.10,      // 10% (유지)
+      review: 0.80,        // 80% - 리뷰 패턴이 가장 중요
+      behavior: 0.20,      // 20% - 행동 패턴
     };
 
     const riskScore = Math.round(
-      accountAgeAnalysis.score * weights.accountAge +
-      transactionAnalysis.score * weights.transaction +
-      priceAnalysis.score * weights.price +
       reviewAnalysis.score * weights.review +
       behaviorAnalysis.score * weights.behavior
     );
@@ -108,9 +98,6 @@ export class FraudDetectionService {
     // 4. 위험 요소 수집
     const riskFactors: string[] = [];
     
-    if (accountAgeAnalysis.score > 50) riskFactors.push(accountAgeAnalysis.description);
-    if (transactionAnalysis.score > 50) riskFactors.push(transactionAnalysis.description);
-    if (priceAnalysis.score > 50) riskFactors.push(priceAnalysis.description);
     if (reviewAnalysis.score > 50) riskFactors.push(reviewAnalysis.description);
     if (behaviorAnalysis.score > 50) riskFactors.push(behaviorAnalysis.description);
 
@@ -129,9 +116,9 @@ export class FraudDetectionService {
       riskFactors: riskFactors.length > 0 ? riskFactors : ["특이사항 없음"],
       recommendation,
       reasoning: {
-        accountAge: accountAgeAnalysis,
-        transactionHistory: transactionAnalysis,
-        priceAnalysis: priceAnalysis,
+        accountAge: { score: 0, description: "분석 안함" },
+        transactionHistory: { score: 0, description: "분석 안함" },
+        priceAnalysis: { score: 0, description: "분석 안함" },
         reviewPattern: reviewAnalysis,
         behaviorPattern: behaviorAnalysis,
       },
