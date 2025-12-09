@@ -68,6 +68,8 @@ export default function FraudAnalytics() {
     );
 
     try {
+      console.log("🔍 분석 시작:", { productId, sellerId });
+      
       const res = await fetch(
         `${API_BASE}/api/fraud-detection/analyze/${productId}?sellerId=${sellerId}`,
         {
@@ -75,11 +77,17 @@ export default function FraudAnalytics() {
         }
       );
 
+      console.log("📡 응답 상태:", res.status);
+
       if (!res.ok) {
-        throw new Error("분석 실패");
+        const errorData = await res.json().catch(() => ({ error: "알 수 없는 오류" }));
+        console.error("❌ 분석 실패:", errorData);
+        throw new Error(errorData.error || `분석 실패 (${res.status})`);
       }
 
       const analysis = await res.json();
+      console.log("✅ 분석 완료:", analysis);
+
       setProducts((prev: ProductWithRisk[]) =>
         prev.map((p: ProductWithRisk) =>
           p._id === productId
@@ -88,13 +96,13 @@ export default function FraudAnalytics() {
         )
       );
     } catch (err: any) {
-      console.error("분석 오류:", err);
+      console.error("❌ 분석 오류:", err);
       setProducts((prev: ProductWithRisk[]) =>
         prev.map((p: ProductWithRisk) =>
           p._id === productId ? { ...p, analyzing: false } : p
         )
       );
-      alert("분석 중 오류가 발생했습니다.");
+      alert(`분석 중 오류가 발생했습니다: ${err.message}`);
     }
   };
 
