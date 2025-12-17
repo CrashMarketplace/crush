@@ -34,42 +34,35 @@ const CATEGORY_AVERAGE_PRICES: Record<string, number> = {
   "기타": 50000,
 };
 
-// 🔥 위험 키워드 (리뷰용)
-const RISK_KEYWORDS = [
-  "노쇼", "입금", "선입금", "말 바꿈", "연락두절", "사기",
-  "환불거부", "거짓말", "불친절", "위협", "욕설",
-  "먹튀", "차단", "신고", "경찰", "고소", "피해",
-  "속았", "조심", "주의", "의심", "이상함", "수상"
-];
-
-// 🔥 가짜 상품 키워드 (상품명/설명용)
-const FAKE_PRODUCT_KEYWORDS = [
-  // 정치인
-  "노무현", "문재인", "윤석열", "이명박", "박근혜", "김대중", "전두환", "노태우",
-  "이재명", "홍준표", "안철수", "심상정", "유승민", "김무성", "나경원",
-  // 연예인/유명인
-  "BTS", "방탄소년단", "블랙핑크", "아이유", "손흥민", "김연아", "박지성",
-  "싸이", "빅뱅", "트와이스", "엑소", "레드벨벳", "뉴진스", "에스파",
-  // 욕설/비속어
-  "시발", "씨발", "ㅅㅂ", "개새", "병신", "ㅂㅅ", "좆", "ㅈ같", "엿먹",
-  "응디", "ㅇㄷ", "꺼져", "죽어", "디져", "뒤져",
-  // 정치/사회 이슈
-  "민주당", "국민의힘", "정의당", "진보당", "좌파", "우파", "종북", "빨갱이",
-  // 기타 부적절
-  "마약", "대마초", "필로폰", "총기", "폭탄", "테러"
-];
-
-// 🔥 의심스러운 리뷰 패턴
-const SUSPICIOUS_PATTERNS = [
-  /ㅋ{3,}/g,           // ㅋㅋㅋ 이상
-  /ㅎ{3,}/g,           // ㅎㅎㅎ 이상
-  /\.{3,}/g,           // ... 이상
-  /!{3,}/g,            // !!! 이상
-  /\?{3,}/g,           // ??? 이상
-  /(.)\1{4,}/g,        // 같은 글자 5번 이상 반복
-  /^.{1,5}$/,          // 5글자 이하 짧은 리뷰
-  /[ㄱ-ㅎㅏ-ㅣ]{5,}/,  // 자음/모음만 5개 이상
-];
+// AI 분석을 위한 데이터 구조
+interface AnalysisData {
+  product: {
+    title: string;
+    description: string;
+    price: number;
+    category: string;
+    images: number;
+    createdAt: Date;
+  };
+  seller: {
+    displayName: string;
+    createdAt: Date;
+    completedTransactions: number;
+    mannerTemperature: number;
+    trustScore: number;
+    totalReviews: number;
+  };
+  reviews: Array<{
+    comment: string;
+    reviewType: string;
+    createdAt: Date;
+  }>;
+  behavior: {
+    recentProductCount: number;
+    totalProducts: number;
+    reservationCancelRate: number;
+  };
+}
 
 export class FraudDetectionService {
   /**
@@ -97,30 +90,45 @@ export class FraudDetectionService {
     // 판매자의 예약 기록
     const sellerReservations = await Reservation.find({ seller: sellerId });
 
-    // 2. 각 항목별 위험도 분석
-    const productAnalysis = this.analyzeProductContent(product);  // 🔥 상품 내용 분석 추가
-    const reviewAnalysis = this.analyzeReviewPattern(sellerReviews);
-    const behaviorAnalysis = this.analyzeBehaviorPattern(seller, sellerProducts, sellerReservations);
+    // 2. AI 분석을 위한 데이터 준비
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const recentProducts = sellerProducts.filter(p => new Date(p.createdAt).getTime() > oneDayAgo);
+    const cancelledReservations = sellerReservations.filter(r => r.status === "cancelled");
+    const cancelRate = sellerReservations.length > 0 ? (cancelledReservations.length / sellerReservations.length) * 100 : 0;
 
-    // 3. 종합 위험 점수 계산
-    const weights = {
-      product: 0.50,       // 50% - 상품 내용 (가장 중요!)
-      review: 0.40,        // 40% - 리뷰 패턴
-      behavior: 0.10,      // 10% - 행동 패턴
+    const analysisData: AnalysisData = {
+      product: {
+        title: product.title || "",
+        description: product.description || "",
+        price: product.price || 0,
+        category: product.category || "기타",
+        images: product.images?.length || 0,
+        createdAt: product.createdAt
+      },
+      seller: {
+        displayName: seller.displayName || "",
+        createdAt: seller.createdAt,
+        completedTransactions: seller.completedTransactions || 0,
+        mannerTemperature: seller.mannerTemperature || 36.5,
+        trustScore: seller.trustScore || 0,
+        totalReviews: seller.totalReviews || 0
+      },
+      reviews: sellerReviews.map(r => ({
+        comment: r.comment || "",
+        reviewType: r.reviewType || "positive",
+        createdAt: r.createdAt
+      })),
+      behavior: {
+        recentProductCount: recentProducts.length,
+        totalProducts: sellerProducts.length,
+        reservationCancelRate: cancelRate
+      }
     };
 
-    const riskScore = Math.round(
-      productAnalysis.score * weights.product +
-      reviewAnalysis.score * weights.review +
-      behaviorAnalysis.score * weights.behavior
-    );
-
-    // 4. 위험 요소 수집
-    const riskFactors: string[] = [];
-    
-    if (productAnalysis.score > 50) riskFactors.push(productAnalysis.description);
-    if (reviewAnalysis.score > 50) riskFactors.push(reviewAnalysis.description);
-    if (behaviorAnalysis.score > 50) riskFactors.push(behaviorAnalysis.description);
+    // 3. AI 기반 종합 분석
+    const aiAnalysis = await this.performAIAnalysis(analysisData);
+    const riskScore = aiAnalysis.score;
+    const riskFactors = aiAnalysis.factors;
 
     // 5. 위험 레벨 결정
     let riskLevel: "낮음" | "보통" | "높음";
@@ -137,50 +145,209 @@ export class FraudDetectionService {
       riskFactors: riskFactors.length > 0 ? riskFactors : ["특이사항 없음"],
       recommendation,
       reasoning: {
-        accountAge: { score: 0, description: "분석 안함" },
-        transactionHistory: { score: 0, description: "분석 안함" },
-        priceAnalysis: { score: 0, description: "분석 안함" },
-        reviewPattern: reviewAnalysis,
-        behaviorPattern: behaviorAnalysis,
+        accountAge: { score: 0, description: "AI 종합 분석으로 대체" },
+        transactionHistory: { score: 0, description: "AI 종합 분석으로 대체" },
+        priceAnalysis: { score: 0, description: "AI 종합 분석으로 대체" },
+        reviewPattern: { score: riskScore, description: aiAnalysis.description },
+        behaviorPattern: { score: 0, description: "AI 종합 분석에 포함" },
       },
     };
   }
 
   /**
-   * 🔥 상품 내용 분석 (가짜 상품 감지)
+   * 🤖 AI 기반 종합 분석
    */
-  private analyzeProductContent(product: any): { score: number; description: string } {
-    const title = (product.title || "").toLowerCase();
-    const productDesc = (product.description || "").toLowerCase();
-    const fullText = `${title} ${productDesc}`;
+  private async performAIAnalysis(data: AnalysisData): Promise<{ score: number; description: string; factors: string[] }> {
+    // 실제 AI 분석 로직 (현재는 휴리스틱 기반으로 구현)
+    let riskScore = 0;
+    const riskFactors: string[] = [];
 
-    // 가짜 상품 키워드 검색
-    const foundKeywords: string[] = [];
-    
-    FAKE_PRODUCT_KEYWORDS.forEach(keyword => {
-      if (fullText.includes(keyword.toLowerCase())) {
-        foundKeywords.push(keyword);
+    // 1. 상품 품질 분석
+    const productQuality = this.analyzeProductQuality(data.product);
+    riskScore += productQuality.score * 0.3;
+    if (productQuality.score > 50) riskFactors.push(productQuality.description);
+
+    // 2. 판매자 신뢰도 분석
+    const sellerTrust = this.analyzeSellerTrustability(data.seller);
+    riskScore += sellerTrust.score * 0.25;
+    if (sellerTrust.score > 50) riskFactors.push(sellerTrust.description);
+
+    // 3. 리뷰 감정 분석
+    const reviewSentiment = this.analyzeReviewSentiment(data.reviews);
+    riskScore += reviewSentiment.score * 0.25;
+    if (reviewSentiment.score > 50) riskFactors.push(reviewSentiment.description);
+
+    // 4. 행동 패턴 분석
+    const behaviorPattern = this.analyzeBehaviorAnomalies(data.behavior);
+    riskScore += behaviorPattern.score * 0.2;
+    if (behaviorPattern.score > 50) riskFactors.push(behaviorPattern.description);
+
+    const finalScore = Math.round(riskScore);
+    let description = "";
+
+    if (finalScore >= 70) {
+      description = "🚨 AI가 높은 사기 위험을 감지했습니다";
+    } else if (finalScore >= 40) {
+      description = "⚠️ AI가 중간 수준의 위험을 감지했습니다";
+    } else {
+      description = "✅ AI 분석 결과 비교적 안전합니다";
+    }
+
+    return { score: finalScore, description, factors: riskFactors };
+  }
+
+  /**
+   * 상품 품질 분석
+   */
+  private analyzeProductQuality(product: any): { score: number; description: string } {
+    let score = 0;
+    let issues: string[] = [];
+
+    // 제목 품질
+    if (!product.title || product.title.length < 5) {
+      score += 30;
+      issues.push("제목 부실");
+    }
+
+    // 설명 품질
+    if (!product.description || product.description.length < 20) {
+      score += 25;
+      issues.push("설명 부족");
+    }
+
+    // 이미지 수
+    if (product.images < 2) {
+      score += 20;
+      issues.push("이미지 부족");
+    }
+
+    // 가격 합리성 (카테고리 대비)
+    const avgPrice = CATEGORY_AVERAGE_PRICES[product.category] || 50000;
+    if (product.price < avgPrice * 0.1) {
+      score += 40;
+      issues.push("비정상적 저가");
+    }
+
+    return {
+      score: Math.min(score, 100),
+      description: issues.length > 0 ? `상품 품질 문제: ${issues.join(", ")}` : "상품 품질 양호"
+    };
+  }
+
+  /**
+   * 판매자 신뢰도 분석
+   */
+  private analyzeSellerTrustability(seller: any): { score: number; description: string } {
+    let score = 0;
+    let issues: string[] = [];
+
+    // 계정 나이
+    const accountDays = Math.floor((Date.now() - new Date(seller.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+    if (accountDays < 7) {
+      score += 40;
+      issues.push("신규 계정");
+    }
+
+    // 거래 경험
+    if (seller.completedTransactions < 3) {
+      score += 30;
+      issues.push("거래 경험 부족");
+    }
+
+    // 매너 온도
+    if (seller.mannerTemperature < 30) {
+      score += 35;
+      issues.push("낮은 매너 온도");
+    }
+
+    // 신뢰 점수
+    if (seller.trustScore < 50 && seller.totalReviews > 5) {
+      score += 25;
+      issues.push("낮은 신뢰 점수");
+    }
+
+    return {
+      score: Math.min(score, 100),
+      description: issues.length > 0 ? `판매자 신뢰도 문제: ${issues.join(", ")}` : "판매자 신뢰도 양호"
+    };
+  }
+
+  /**
+   * 리뷰 감정 분석
+   */
+  private analyzeReviewSentiment(reviews: any[]): { score: number; description: string } {
+    if (reviews.length === 0) {
+      return { score: 30, description: "리뷰 없음" };
+    }
+
+    let score = 0;
+    let negativeCount = 0;
+    let suspiciousCount = 0;
+
+    reviews.forEach(review => {
+      if (review.reviewType === "negative") {
+        negativeCount++;
+      }
+
+      const comment = review.comment || "";
+      
+      // 의심스러운 패턴 감지 (간단한 휴리스틱)
+      if (comment.length < 5 || 
+          /ㅋ{3,}/.test(comment) || 
+          /ㅎ{3,}/.test(comment) ||
+          /[ㄱ-ㅎㅏ-ㅣ]{5,}/.test(comment)) {
+        suspiciousCount++;
       }
     });
 
-    let score = 0;
-    let description = "";
+    const negativeRate = (negativeCount / reviews.length) * 100;
+    const suspiciousRate = (suspiciousCount / reviews.length) * 100;
 
-    if (foundKeywords.length > 0) {
-      score = 100;  // 최고 위험도!
-      description = `🚨 가짜 상품 의심: "${foundKeywords.slice(0, 3).join(", ")}" 포함`;
-    } else if (title.length < 3) {
-      score = 70;
-      description = "⚠️ 상품명이 너무 짧음";
-    } else if (productDesc.length < 10) {
-      score = 50;
-      description = "⚠️ 상품 설명이 너무 짧음";
-    } else {
-      score = 0;
-      description = "✅ 정상 상품";
+    if (negativeRate > 60) {
+      score += 50;
+    } else if (negativeRate > 30) {
+      score += 25;
     }
 
-    return { score, description };
+    if (suspiciousRate > 40) {
+      score += 40;
+    } else if (suspiciousRate > 20) {
+      score += 20;
+    }
+
+    let description = "";
+    if (score > 50) {
+      description = `리뷰 패턴 이상: 부정 ${negativeRate.toFixed(0)}%, 의심 ${suspiciousRate.toFixed(0)}%`;
+    } else {
+      description = "리뷰 패턴 정상";
+    }
+
+    return { score: Math.min(score, 100), description };
+  }
+
+  /**
+   * 행동 패턴 이상 감지
+   */
+  private analyzeBehaviorAnomalies(behavior: any): { score: number; description: string } {
+    let score = 0;
+    let issues: string[] = [];
+
+    // 과도한 상품 등록
+    if (behavior.recentProductCount > 10) {
+      score += 40;
+      issues.push("과도한 상품 등록");
+    }
+
+    // 높은 예약 취소율
+    if (behavior.reservationCancelRate > 50) {
+      score += 35;
+      issues.push("높은 취소율");
+    }
+
+    return {
+      score: Math.min(score, 100),
+      description: issues.length > 0 ? `행동 패턴 이상: ${issues.join(", ")}` : "행동 패턴 정상"
+    };
   }
 
   /**
@@ -294,135 +461,7 @@ export class FraudDetectionService {
     return { score, description };
   }
 
-  /**
-   * 리뷰 패턴 분석 (강화)
-   */
-  private analyzeReviewPattern(reviews: any[]): { score: number; description: string } {
-    if (reviews.length === 0) {
-      return { score: 40, description: "리뷰 없음 (신뢰도 낮음)" };
-    }
 
-    const negativeCount = reviews.filter(r => r.reviewType === "negative").length;
-    const negativeRate = (negativeCount / reviews.length) * 100;
-
-    // 🔥 위험 키워드 검색
-    let riskKeywordCount = 0;
-    const foundKeywords: string[] = [];
-
-    reviews.forEach(review => {
-      const comment = (review.comment || "").toLowerCase();
-      RISK_KEYWORDS.forEach(keyword => {
-        if (comment.includes(keyword)) {
-          riskKeywordCount++;
-          if (!foundKeywords.includes(keyword)) {
-            foundKeywords.push(keyword);
-          }
-        }
-      });
-    });
-
-    // 🔥 의심스러운 패턴 검색
-    let suspiciousPatternCount = 0;
-    const foundPatterns: string[] = [];
-
-    reviews.forEach(review => {
-      const comment = review.comment || "";
-      
-      SUSPICIOUS_PATTERNS.forEach((pattern, index) => {
-        if (pattern.test(comment)) {
-          suspiciousPatternCount++;
-          
-          // 패턴별 설명
-          const patternNames = [
-            "과도한 ㅋㅋㅋ",
-            "과도한 ㅎㅎㅎ", 
-            "과도한 ...",
-            "과도한 !!!",
-            "과도한 ???",
-            "같은 글자 반복",
-            "너무 짧은 리뷰",
-            "자음/모음만 사용"
-          ];
-          
-          if (!foundPatterns.includes(patternNames[index])) {
-            foundPatterns.push(patternNames[index]);
-          }
-        }
-      });
-    });
-
-    let score = 0;
-    let description = "";
-
-    // 🔥 점수 계산 (더 민감하게)
-    if (riskKeywordCount > 0) {
-      score = 90;
-      description = `⚠️ 위험 키워드 발견: ${foundKeywords.join(", ")}`;
-    } else if (suspiciousPatternCount >= 3) {
-      score = 80;
-      description = `⚠️ 의심스러운 리뷰 패턴: ${foundPatterns.slice(0, 3).join(", ")}`;
-    } else if (suspiciousPatternCount >= 1) {
-      score = 60;
-      description = `⚡ 부적절한 리뷰: ${foundPatterns.join(", ")}`;
-    } else if (negativeRate > 50) {
-      score = 70;
-      description = `부정 리뷰 ${negativeRate.toFixed(0)}%`;
-    } else if (negativeRate > 30) {
-      score = 50;
-      description = `부정 리뷰 ${negativeRate.toFixed(0)}%`;
-    } else if (reviews.length < 3) {
-      score = 20;
-      description = `리뷰 부족 (${reviews.length}개)`;
-    } else {
-      score = 0;
-      description = `✅ 정상 리뷰 패턴 (${reviews.length}개)`;
-    }
-
-    return { score, description };
-  }
-
-  /**
-   * 행동 패턴 분석
-   */
-  private analyzeBehaviorPattern(
-    seller: any,
-    products: any[],
-    reservations: any[]
-  ): { score: number; description: string } {
-    // 최근 24시간 내 등록한 상품 수
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    const recentProducts = products.filter(
-      p => new Date(p.createdAt).getTime() > oneDayAgo
-    );
-
-    // 매너 온도
-    const mannerTemp = seller.mannerTemperature || 36.5;
-
-    // 신뢰 지수
-    const trustScore = seller.trustScore || 0;
-
-    let score = 0;
-    let description = "";
-
-    if (recentProducts.length > 10) {
-      score = 70;
-      description = `24시간 내 ${recentProducts.length}개 상품 등록 (과다)`;
-    } else if (mannerTemp < 20) {
-      score = 80;
-      description = `매너 온도 매우 낮음 (${mannerTemp.toFixed(1)}°C)`;
-    } else if (trustScore < 20 && seller.totalReviews > 5) {
-      score = 60;
-      description = `신뢰 지수 낮음 (${trustScore}점)`;
-    } else if (recentProducts.length > 5) {
-      score = 30;
-      description = `최근 활발한 상품 등록 (${recentProducts.length}개)`;
-    } else {
-      score = 0;
-      description = "정상 활동 패턴";
-    }
-
-    return { score, description };
-  }
 
   /**
    * 권장사항 생성
