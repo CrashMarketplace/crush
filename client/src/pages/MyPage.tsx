@@ -14,14 +14,14 @@ import { getSellerId } from "../data/mockProducts";
 import { API_BASE } from "../utils/apiConfig";
 
 // 🔥 비상용 백엔드 주소 (환경변수 누락 대비)
-const BACKUP_API_URL = "https://crush-production.up.railway.app";
+const BACKUP_API_URL = "https://crush-h4ws.onrender.com";
 
 // 🔥 안전한 이미지 URL 변환 함수
 function safeFixImageUrl(url?: string) {
   if (!url) return "";
   if (url.startsWith("data:") || url.startsWith("blob:")) return url;
 
-  // 1. localhost -> Railway URL 변환
+  // 1. localhost -> Render URL 변환
   let fixed = url;
   const targetBase = API_BASE || BACKUP_API_URL;
 
@@ -732,7 +732,7 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE || "https://crush-production.up.railway.app"}/api/auth/delete-account`, {
+      const res = await fetch(`${API_BASE || "https://crush-h4ws.onrender.com"}/api/auth/delete-account`, {
         method: "DELETE",
         credentials: "include",
       });

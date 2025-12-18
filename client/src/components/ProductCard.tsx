@@ -14,7 +14,7 @@ export default function ProductCard({ item, onDeleted }: Props) {
   const { user } = useAuth();
   const [deleting, setDeleting] = useState(false);
 
-  // ⭐ 이미지 경로 수정 (Railway 서버 절대경로)
+  // ⭐ 이미지 경로 수정 (Render 서버 절대경로)
   const rawImage = item.images?.[0];
   const imageSrc = rawImage
     ? rawImage
