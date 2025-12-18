@@ -33,7 +33,7 @@ if (isValidVapidKey(VAPID_PUBLIC_KEY) && isValidVapidKey(VAPID_PRIVATE_KEY)) {
     console.log("✅ 웹 푸시 알림 활성화됨");
   } catch (error) {
     console.warn("⚠️ VAPID 키 설정 실패. 푸시 알림 비활성화");
-    console.warn("   Railway 환경 변수에서 VAPID_PUBLIC_KEY와 VAPID_PRIVATE_KEY를 삭제하거나");
+    console.warn("   Render 환경 변수에서 VAPID_PUBLIC_KEY와 VAPID_PRIVATE_KEY를 삭제하거나");
     console.warn("   npm run generate-vapid 명령으로 새 키를 생성하여 교체하세요");
   }
 } else {

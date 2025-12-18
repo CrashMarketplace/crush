@@ -16,7 +16,7 @@ function safeFixImageUrl(url?: string) {
   if (!url) return "";
   if (url.startsWith("data:") || url.startsWith("blob:")) return url;
 
-  const BACKUP_API_URL = "https://crush-production.up.railway.app";
+  const BACKUP_API_URL = "https://crush-h4ws.onrender.com";
   let fixed = url;
   const targetBase = API_BASE || BACKUP_API_URL;
 

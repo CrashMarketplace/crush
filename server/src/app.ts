@@ -31,13 +31,13 @@ import uploadsRouter from "./routes/uploads";
 
 const app = express();
 
-// ⭐ Railway / Proxy 환경에서 반드시 필요
+// ⭐ Render / Proxy 환경에서 반드시 필요
 app.set("trust proxy", 1);
 
 // MODE
 const isDevelopment = process.env.NODE_ENV !== "production";
-const isRailway = Boolean(process.env.RAILWAY_PROJECT_ID);
-const isProduction = !isDevelopment || isRailway;
+const isRender = Boolean(process.env.RENDER);
+const isProduction = !isDevelopment || isRender;
 
 // 🔒 보안: 허용된 도메인 목록
 const allowedOriginsList = [
@@ -45,6 +45,7 @@ const allowedOriginsList = [
   "https://www.bilidamarket.com",
   "http://localhost:5173",
   "http://localhost:4000",
+  "https://crush-h4ws.onrender.com", // Render 백엔드
   "https://crush-two-flame.vercel.app", // 메인 Vercel 도메인
   "https://crush-git-main-0608s-projects.vercel.app",
   "https://crush-2et7g8ny6-0608s-projects.vercel.app",
@@ -155,7 +156,7 @@ try {
 
 // ---- Public base & URL normalization helpers ----
 const PUBLIC_BASE = (process.env.PUBLIC_BASE_URL?.replace(/\/+$/, "") ||
-  "https://crush-production.up.railway.app");
+  "https://crush-h4ws.onrender.com");
 
 function ensureUploadsPrefix(p: string) {
   let s = p.trim();
@@ -326,7 +327,7 @@ initSocketServer(server, true);
     });
   } catch (err) {
     console.error("❌ Server startup failed:", err);
-    // 실패 시 프로세스 종료 -> Railway 재시도
+    // 실패 시 프로세스 종료 -> Render 재시도
     process.exit(1);
   }
 })();

@@ -6,17 +6,17 @@ import type { Product } from "../data/mockProducts";
 import { buildApiUrl, API_BASE } from "../utils/apiConfig";
 
 // 🔥 비상용 백엔드 주소 (환경변수 누락 대비)
-const BACKUP_API_URL = "https://crush-production.up.railway.app";
+const BACKUP_API_URL = "https://crush-h4ws.onrender.com";
 
 // 🔥 안전한 이미지 URL 변환 함수 (MyPage와 동일 로직)
 function safeFixImageUrl(url?: string) {
   if (!url) return "";
   if (url.startsWith("data:") || url.startsWith("blob:")) return url;
 
-  // 1. localhost -> Railway URL 변환
+  // 1. localhost -> Render URL 변환
   let fixed = url;
   
-  // 🔥 [수정] API_BASE가 로컬호스트면 강제로 백업(Railway) 주소 사용 (Vercel에서 엑박 방지)
+  // 🔥 [수정] API_BASE가 로컬호스트면 강제로 백업(Render) 주소 사용 (Vercel에서 엑박 방지)
   const isLocalApi = API_BASE && (API_BASE.includes("localhost") || API_BASE.includes("127.0.0.1"));
   const targetBase = (!API_BASE || isLocalApi) ? BACKUP_API_URL : API_BASE;
 
