@@ -60,23 +60,35 @@ const corsOptions: CorsOptions = {
     
     // Vercel 프리뷰 도메인 자동 허용
     if (origin.includes('.vercel.app')) {
+      console.log("✅ CORS 허용 (Vercel):", origin);
+      return callback(null, true);
+    }
+    
+    // Render 도메인 허용
+    if (origin.includes('.onrender.com')) {
+      console.log("✅ CORS 허용 (Render):", origin);
       return callback(null, true);
     }
     
     // 허용 목록에 있으면 허용
     if (allowedOriginsList.includes(origin)) {
+      console.log("✅ CORS 허용 (허용 목록):", origin);
       return callback(null, true);
     }
     
     // 개발 환경에서는 모두 허용
     if (isDevelopment) {
+      console.log("✅ CORS 허용 (개발 환경):", origin);
       return callback(null, true);
     }
     
     console.warn("⚠️ CORS 차단:", origin);
     callback(new Error('Not allowed by CORS'));
   },
-  credentials: true 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Set-Cookie']
 };
 app.use(cors(corsOptions));
 app.use(express.json());

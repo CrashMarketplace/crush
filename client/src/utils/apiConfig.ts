@@ -17,6 +17,13 @@ export function getApiBaseUrl(): string {
     if (host === "localhost" || host === "127.0.0.1") {
       return "http://localhost:4000";
     }
+    
+    // 프로덕션 환경에서 환경 변수가 없으면 Render URL 사용
+    if (host.includes("vercel.app") || host.includes("bilidamarket.com")) {
+      const renderUrl = "https://crush-h4ws.onrender.com";
+      console.warn("⚠️ VITE_API_URL이 설정되지 않음. Render URL 사용:", renderUrl);
+      return renderUrl;
+    }
   }
 
   console.error("❌ API BASE URL이 설정되지 않음");
