@@ -49,6 +49,7 @@ const allowedOriginsList = [
   "https://crush-two-flame.vercel.app", // 메인 Vercel 도메인
   "https://crush-git-main-0608s-projects.vercel.app",
   "https://crush-2et7g8ny6-0608s-projects.vercel.app",
+  "https://ff1320ed07128edf1b9f0c5eb9eedd00.r2.cloudflarestorage.com", // Cloudflare R2 이미지 스토리지
   ...(process.env.ALLOWED_ORIGINS?.split(",").map(x => x.trim()) || []),
 ];
 
