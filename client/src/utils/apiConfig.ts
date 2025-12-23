@@ -63,7 +63,17 @@ export function buildApiUrl(path: string): string {
     path = "/" + path;
   }
 
-  return `${API_BASE}/api${path}`;
+  if (!API_BASE) {
+    console.error("❌ API_BASE가 설정되지 않음. path:", path);
+    // 비상용 Render URL 사용
+    const fallback = "https://crush-h4ws.onrender.com";
+    console.warn("⚠️ Fallback URL 사용:", fallback);
+    return `${fallback}/api${path}`;
+  }
+
+  const url = `${API_BASE}/api${path}`;
+  console.log("🔗 API URL:", url);
+  return url;
 }
 
 /**
