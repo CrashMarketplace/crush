@@ -186,9 +186,9 @@ export default function Signup() {
   }, [verified, userId, pw, email, navigate]);
 
   return (
-    <div className="relative flex items-center justify-center min-h-[calc(100vh-120px)] bg-gradient-to-b from-white to-slate-50 px-4 py-12">
+    <div className="relative flex items-center justify-center min-h-[calc(100vh-120px)] bg-white px-4 py-12">
       <div className="relative w-full max-w-5xl overflow-hidden rounded-[28px] shadow-2xl shadow-black/25">
-        <div className="text-white bg-gradient-to-r from-[#001C6D] to-[#004695]">
+        <div className="text-white bg-[#001C6D]">
           <div className="grid grid-cols-1 md:grid-cols-2">
             {/* 왼쪽 브랜드 */}
             <div className="relative flex items-center justify-center p-10 md:p-14">

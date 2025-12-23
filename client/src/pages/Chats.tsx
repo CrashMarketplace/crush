@@ -250,7 +250,7 @@ export default function Chats() {
                       isActive ? "bg-white shadow-sm" : "hover:bg-white/80"
                     }`}
                   >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#d7c28a] to-[#b7903f]" />
+                    <div className="w-12 h-12 rounded-full bg-[#d7c28a]" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-base font-semibold text-gray-900 truncate">
