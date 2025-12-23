@@ -69,7 +69,7 @@ export default function ProductCard({ item, onDeleted }: Props) {
       to={`/listing/${item._id}`}
       className="relative block transition-all duration-300 card hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] group"
     >
-      <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 aspect-square overflow-hidden">
+      <div className="relative bg-gray-100 aspect-square overflow-hidden">
         <img
           src={imageSrc}
           alt={item.title}
@@ -77,8 +77,8 @@ export default function ProductCard({ item, onDeleted }: Props) {
           loading="lazy"
         />
         
-        {/* 호버 시 그라디언트 오버레이 */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        {/* 호버 시 오버레이 */}
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         {item.status !== "selling" ? (
           <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-white bg-black/55">
             {statusText}
@@ -98,7 +98,7 @@ export default function ProductCard({ item, onDeleted }: Props) {
         ) : null}
       </div>
 
-      <div className="p-3 bg-gradient-to-b from-white to-gray-50 group-hover:from-blue-50 group-hover:to-purple-50 transition-all duration-300">
+      <div className="p-3 bg-white group-hover:bg-gray-50 transition-all duration-300">
         <h3 className="text-sm line-clamp-1 font-semibold group-hover:text-blue-600 transition-colors">
           {item.title}
         </h3>
@@ -108,7 +108,7 @@ export default function ProductCard({ item, onDeleted }: Props) {
           </div>
         ) : null}
 
-        <p className="mt-1 font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <p className="mt-1 font-bold text-lg text-blue-600">
           {Number(item.price).toLocaleString()}원
         </p>
 

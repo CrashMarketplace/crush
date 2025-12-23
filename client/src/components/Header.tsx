@@ -259,7 +259,7 @@ export default function Header() {
                       onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                       className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
                     >
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold overflow-hidden">
+                      <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold overflow-hidden">
                         {user.avatarUrl ? (
                           <img
                             src={safeFixImageUrl(user.avatarUrl)}
@@ -405,7 +405,7 @@ export default function Header() {
             {/* 등록하기 버튼 (네비게이션 바) */}
             <button
               onClick={goSell}
-              className="ml-auto px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 rounded-lg transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+              className="ml-auto px-5 py-2 text-sm font-semibold text-white bg-teal-500 hover:bg-teal-600 rounded-lg transition-all shadow-sm hover:shadow-md whitespace-nowrap"
               title={user ? "상품 등록하기" : "로그인하고 상품 등록하기"}
             >
               + 등록하기
