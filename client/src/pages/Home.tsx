@@ -45,11 +45,25 @@ export default function Home() {
       setLoading(true);
       setErr(null);
       try {
-        const res = await fetch(buildApiUrl("/products"), {
+        const apiUrl = buildApiUrl("/products");
+        console.log("📡 상품 목록 요청:", apiUrl);
+        
+        const res = await fetch(apiUrl, {
           credentials: "include",
         });
+        
+        console.log("📥 응답 상태:", res.status, res.statusText);
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("❌ API 오류:", res.status, errorText);
+          throw new Error(`서버 오류 (${res.status}): ${errorText || res.statusText}`);
+        }
+        
         const data = await res.json();
-        if (!res.ok || data.ok === false)
+        console.log("✅ 상품 데이터 수신:", data.products?.length || 0, "개");
+        
+        if (data.ok === false)
           throw new Error(data.error || "불러오기 실패");
         if (!alive) return;
 
@@ -61,8 +75,10 @@ export default function Home() {
         }));
 
         setItems(fixedProducts);
+        console.log("✅ 상품 목록 설정 완료:", fixedProducts.length, "개");
       } catch (e: any) {
         if (!alive) return;
+        console.error("❌ 상품 목록 로드 실패:", e);
         setErr(e.message || "에러가 발생했습니다.");
       } finally {
         if (alive) setLoading(false);
